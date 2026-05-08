@@ -1,0 +1,148 @@
+# Windsurf Migration / Lovable.dev Removal Guide
+
+## 1) Codebase overview
+
+- **Framework/runtime**
+  - **React 19** UI.
+  - **TanStack Router + TanStack Start** (SSR-capable React app).
+  - **Vite** as the dev server/bundler.
+- **Styling/UI**
+  - **Tailwind CSS v4**.
+  - **shadcn/ui** style setup (see `components.json`) and Radix UI components.
+- **Backend / data**
+  - **Supabase** via `@supabase/supabase-js`.
+  - Client code uses `src/integrations/supabase/client.ts`.
+  - Server helpers/middleware exist for TanStack Start: `src/integrations/supabase/auth-middleware.ts` and `src/integrations/supabase/client.server.ts`.
+- **Deployment hint**
+  - `wrangler.jsonc` indicates a Cloudflare Workers-compatible deployment target (TanStack Start server entry).
+
+## 2) What is “Lovable-dependent” in this repo
+
+The main Lovable coupling is build tooling, not application code:
+
+- **Dev dependency**: `@lovable.dev/vite-tanstack-config` (in `package.json`).
+- **Vite config**: `vite.config.ts` imports `defineConfig` from `@lovable.dev/vite-tanstack-config`.
+
+That package is acting as an opinionated wrapper that wires up multiple Vite plugins/settings (TanStack Start, React, Tailwind, tsconfig paths, Cloudflare build bits, env injection, etc.). To fully disconnect from Lovable, you replace that wrapper with explicit/official Vite + TanStack Start configuration.
+
+Additionally, several Supabase helper files include the string **“Connect Supabase in Lovable Cloud.”** in error messages. That’s not a runtime dependency, but it’s Lovable-specific messaging.
+
+## 3) Local development: get it running (with current Lovable config)
+
+### 3.1 Prereqs
+
+- **Node.js**: use a modern LTS (Node 20+ is a safe baseline for Vite 7).
+- **Package manager**: the repo contains `bun.lockb` and also `package-lock.json`.
+  - Prefer **Bun** if that’s what you used with Lovable.
+  - Or use **npm** if you prefer reproducibility with the lockfile.
+
+### 3.2 Environment variables
+
+This repo currently has a committed `.env` with Supabase values:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_URL`
+- `SUPABASE_PUBLISHABLE_KEY`
+
+Notes:
+
+- **Security**: publishing keys are intended to be public, but you should still treat `.env` as sensitive and avoid committing secrets (especially if you later add `SUPABASE_SERVICE_ROLE_KEY`).
+- For local development, the client code reads `VITE_*` variables via `import.meta.env`.
+
+### 3.3 Install + run
+
+Pick one:
+
+- **Bun**
+  - `bun install`
+  - `bun run dev`
+
+- **npm**
+  - `npm ci` (or `npm install`)
+  - `npm run dev`
+
+Then open the URL Vite prints (typically `http://localhost:5173`).
+
+## 4) Step-by-step plan to remove Lovable.dev dependencies
+
+### Outcome
+
+- You no longer depend on `@lovable.dev/vite-tanstack-config`.
+- `vite.config.ts` becomes a standard, explicit Vite config.
+- The project builds and runs locally with no Lovable packages.
+
+### Step 1 — Inventory and isolate Lovable usage
+
+- Confirm these are the only direct Lovable references:
+  - `package.json` devDependency `@lovable.dev/vite-tanstack-config`.
+  - `vite.config.ts` importing it.
+- Search for additional references (optional): look for `lovable`, `@lovable.dev`, and “Lovable Cloud”.
+
+### Step 2 — Replace `vite.config.ts` with a non-Lovable Vite config
+
+You will remove the wrapper and explicitly add the plugins/config it previously injected.
+
+At minimum, a non-Lovable `vite.config.ts` will typically need:
+
+- **React plugin**: `@vitejs/plugin-react`
+- **tsconfig paths**: `vite-tsconfig-paths`
+- **TanStack Start**: TanStack Start’s official Vite integration/plugin (use the TanStack Start docs for the exact plugin import for your installed `@tanstack/react-start` version).
+- **Tailwind v4**: `@tailwindcss/vite` if you want Tailwind’s Vite integration.
+- Optional / environment-specific:
+  - **Cloudflare** build plugin: `@cloudflare/vite-plugin` (if you’re targeting Workers).
+  - Any “dedupe” config for React/TanStack packages if you hit duplicated module issues.
+
+Because `@lovable.dev/vite-tanstack-config` may bundle several behaviors, do the replacement in small increments:
+
+- Start with React + tsconfig-paths + TanStack Start.
+- Run `dev`.
+- Add Tailwind plugin if styling is not applied.
+- Add Cloudflare plugin if the production build target requires it.
+
+### Step 3 — Remove the Lovable package
+
+- Remove `@lovable.dev/vite-tanstack-config` from `devDependencies`.
+- Reinstall dependencies.
+
+### Step 4 — Validate env handling without Lovable
+
+Lovable’s wrapper mentions “VITE_* env injection”. In standard Vite:
+
+- `import.meta.env.VITE_*` works automatically when variables exist in `.env`.
+
+So you typically don’t need special env injection beyond standard Vite behavior.
+
+### Step 5 — Remove Lovable-specific messaging (optional but recommended)
+
+These files throw errors mentioning Lovable:
+
+- `src/integrations/supabase/client.ts`
+- `src/integrations/supabase/client.server.ts`
+- `src/integrations/supabase/auth-middleware.ts`
+
+Update the message text to something local-dev friendly (e.g. “Set SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY in .env”).
+
+### Step 6 — Verify builds and runtime
+
+- **Dev**: `npm run dev` (or `bun run dev`)
+- **Build**: `npm run build`
+- **Preview**: `npm run preview`
+
+If you are deploying to Cloudflare Workers, also verify Wrangler compatibility after the Lovable wrapper is removed.
+
+## 5) Checklist / common pitfalls
+
+- **Tailwind not applying**
+  - Ensure `src/styles.css` is included and Vite picks it up (it is linked in `src/routes/__root.tsx`).
+  - Ensure the Tailwind/Vite integration is configured correctly for Tailwind v4.
+- **Missing route generation**
+  - `src/routeTree.gen.ts` is generated by TanStack Router tooling. If you start editing routes and it stops updating, you may need to add the official TanStack Router plugin to Vite (again: follow TanStack Router/Start docs for your versions).
+- **Supabase env missing**
+  - The Supabase client throws if env vars are missing. Make sure `.env` exists locally.
+- **Do not add server secrets to the client**
+  - Never expose `SUPABASE_SERVICE_ROLE_KEY` to browser code.
+
+## 6) What I changed in the repo as part of this request
+
+- Added this file: `windsurf-migration-md`

@@ -1,0 +1,165 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Aperture — cinematic dark portfolio design system.
+ * Apple-like minimal + screening-room atmosphere.
+ * All colors in oklch. Use semantic tokens only in components.
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-glass: var(--glass);
+  --color-glass-border: var(--glass-border);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --font-sans: "Inter", "SF Pro Display", system-ui, sans-serif;
+  --font-serif: "Cormorant Garamond", "Times New Roman", serif;
+
+  --shadow-elegant: 0 20px 60px -20px oklch(0% 0 0 / 0.6),
+    inset 0 1px 0 0 oklch(100% 0 0 / 0.04);
+  --shadow-glow: 0 0 80px -20px var(--accent);
+}
+
+:root {
+  --radius: 1rem;
+
+  /* Cinematic dark — near-black indigo */
+  --background: oklch(12% 0.01 260);
+  --foreground: oklch(96% 0.005 260);
+
+  --card: oklch(16% 0.012 260);
+  --card-foreground: oklch(96% 0.005 260);
+
+  --popover: oklch(16% 0.012 260);
+  --popover-foreground: oklch(96% 0.005 260);
+
+  /* Goldenrod accent */
+  --primary: oklch(78% 0.14 75);
+  --primary-foreground: oklch(15% 0.02 260);
+
+  --secondary: oklch(22% 0.015 260);
+  --secondary-foreground: oklch(96% 0.005 260);
+
+  --muted: oklch(20% 0.012 260);
+  --muted-foreground: oklch(65% 0.015 260);
+
+  --accent: oklch(78% 0.14 75);
+  --accent-foreground: oklch(15% 0.02 260);
+
+  --destructive: oklch(60% 0.22 22);
+  --destructive-foreground: oklch(98% 0.005 260);
+
+  --border: oklch(28% 0.015 260);
+  --input: oklch(22% 0.015 260);
+  --ring: oklch(78% 0.14 75);
+
+  /* Glass tokens */
+  --glass: oklch(16% 0.012 260 / 0.55);
+  --glass-border: oklch(100% 0 0 / 0.08);
+
+  --sidebar: oklch(14% 0.012 260);
+  --sidebar-foreground: oklch(96% 0.005 260);
+  --sidebar-primary: oklch(78% 0.14 75);
+  --sidebar-primary-foreground: oklch(15% 0.02 260);
+  --sidebar-accent: oklch(22% 0.015 260);
+  --sidebar-accent-foreground: oklch(96% 0.005 260);
+  --sidebar-border: oklch(28% 0.015 260);
+  --sidebar-ring: oklch(78% 0.14 75);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html, body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background-color: var(--color-accent);
+    color: var(--color-accent-foreground);
+  }
+}
+
+@layer utilities {
+  .font-serif {
+    font-family: var(--font-serif);
+  }
+
+  .glass {
+    background-color: var(--color-glass);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid var(--color-glass-border);
+  }
+
+  .shadow-elegant {
+    box-shadow: var(--shadow-elegant);
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.6s ease-out both;
+  }
+
+  .animate-fade-up {
+    animation: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+}
