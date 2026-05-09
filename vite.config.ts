@@ -8,6 +8,20 @@ export default defineConfig({
   server: {
     port: 3000,
   },
+  build: {
+    rollupOptions: {
+      onwarn(warning, warn) {
+        // Ignore "unused external import" warnings from TanStack internals
+        if (
+          warning.code === 'UNUSED_EXTERNAL_IMPORT' &&
+          warning.message?.includes('@tanstack')
+        ) {
+          return
+        }
+        warn(warning)
+      },
+    },
+  },
   plugins: [
     tsconfigPaths(),
     tailwindcss(),
