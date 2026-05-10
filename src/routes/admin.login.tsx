@@ -33,13 +33,12 @@ function LoginPage() {
         email,
         password,
       });
-      console.log("[Auth] Sign in response:", { data, error });
+      // Auth response handled below
       if (error) throw error;
       toast.success("Welcome back.");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Authentication failed";
-      console.error("[Auth] Login error:", msg);
-      toast.error(msg);
+      console.error("[Auth] Login error");
+      toast.error("Invalid email or password.");
     } finally {
       setSubmitting(false);
     }

@@ -31,9 +31,8 @@ export function useAuth(): AuthState {
     // 2) Then load existing session
     supabase.auth.getSession().then(({ data: { session: s }, error }) => {
       if (error) {
-        console.error("[Auth] getSession error:", error.message);
+        console.error("[Auth] getSession error");
       }
-      console.log("[Auth] Session loaded:", s?.user?.id ?? "no session");
       setSession(s);
       if (s?.user) {
         checkAdmin(s.user.id).finally(() => setLoading(false));
@@ -53,9 +52,8 @@ export function useAuth(): AuthState {
       .eq("role", "admin")
       .maybeSingle();
     if (error) {
-      console.error("[Auth] checkAdmin error:", error.message);
+      console.error("[Auth] checkAdmin error");
     }
-    console.log("[Auth] Admin check for", userId, ":", !!data);
     setIsAdmin(!!data);
   }
 

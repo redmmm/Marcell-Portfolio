@@ -14,9 +14,9 @@ export function useSiteLock() {
         .limit(1)
         .maybeSingle();
       if (error) {
-        console.error("[SiteLock] Error loading settings:", error.message);
+        console.error("[SiteLock] Error loading settings");
       }
-      console.log("[SiteLock] Settings loaded:", data?.is_locked ?? false);
+      // Site lock settings loaded
       if (active) setIsLocked(data?.is_locked ?? false);
     }
     load();
