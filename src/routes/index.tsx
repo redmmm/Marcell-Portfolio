@@ -97,18 +97,18 @@ function HomePage() {
       {/* Category Filter Bar */}
       {uniqueCategories.length > 0 && (
         <section className="px-6 pb-8">
-          <div className="mx-auto max-w-7xl">
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <button
-                onClick={() => setSelectedCategory(null)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                  selectedCategory === null
-                    ? "bg-white text-black"
-                    : "glass text-foreground/80 hover:text-foreground hover:bg-white/10"
-                }`}
-              >
-                All
-              </button>
+          <div className="mx-auto max-w-7xl flex flex-col items-center gap-4">
+            <button
+              onClick={() => setSelectedCategory(null)}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                selectedCategory === null
+                  ? "bg-white text-black"
+                  : "glass text-foreground/80 hover:text-foreground hover:bg-white/10"
+              }`}
+            >
+              All
+            </button>
+            <div className="flex flex-wrap items-center justify-center gap-3">
               {uniqueCategories.map((category) => (
                 <button
                   key={category}

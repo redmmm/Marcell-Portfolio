@@ -72,9 +72,9 @@
   --popover: oklch(16% 0.012 260);
   --popover-foreground: oklch(96% 0.005 260);
 
-  /* Goldenrod accent */
-  --primary: oklch(78% 0.14 75);
-  --primary-foreground: oklch(15% 0.02 260);
+  /* Soft blue accent */
+  --primary: #cbdaf2;
+  --primary-foreground: #0f172a;
 
   --secondary: oklch(22% 0.015 260);
   --secondary-foreground: oklch(96% 0.005 260);
@@ -82,15 +82,15 @@
   --muted: oklch(20% 0.012 260);
   --muted-foreground: oklch(65% 0.015 260);
 
-  --accent: oklch(78% 0.14 75);
-  --accent-foreground: oklch(15% 0.02 260);
+  --accent: #cbdaf2;
+  --accent-foreground: #0f172a;
 
   --destructive: oklch(60% 0.22 22);
   --destructive-foreground: oklch(98% 0.005 260);
 
   --border: oklch(28% 0.015 260);
   --input: oklch(22% 0.015 260);
-  --ring: oklch(78% 0.14 75);
+  --ring: #cbdaf2;
 
   /* Glass tokens */
   --glass: oklch(16% 0.012 260 / 0.55);
@@ -98,12 +98,12 @@
 
   --sidebar: oklch(14% 0.012 260);
   --sidebar-foreground: oklch(96% 0.005 260);
-  --sidebar-primary: oklch(78% 0.14 75);
-  --sidebar-primary-foreground: oklch(15% 0.02 260);
+  --sidebar-primary: #cbdaf2;
+  --sidebar-primary-foreground: #0f172a;
   --sidebar-accent: oklch(22% 0.015 260);
   --sidebar-accent-foreground: oklch(96% 0.005 260);
   --sidebar-border: oklch(28% 0.015 260);
-  --sidebar-ring: oklch(78% 0.14 75);
+  --sidebar-ring: #cbdaf2;
 }
 
 @layer base {
