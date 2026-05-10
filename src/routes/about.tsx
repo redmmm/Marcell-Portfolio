@@ -48,6 +48,53 @@ function AboutPage() {
             </p>
           </div>
 
+          {/* Tools & Workflow */}
+          <div className="mt-16 animate-fade-up">
+            <p className="text-xs uppercase tracking-[0.2em] text-gray-500 mb-8 text-center">
+              WORKFLOW & TOOLS
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* DaVinci Resolve */}
+              <div className="group flex items-center gap-4 p-5 rounded-2xl glass hover:bg-white/[0.03] transition-all duration-500">
+                <img
+                  src="/davinci.png"
+                  alt="DaVinci Resolve"
+                  className="w-12 h-12 object-contain grayscale opacity-60 transition-all duration-500 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105"
+                />
+                <div>
+                  <h3 className="text-sm font-medium text-foreground">DaVinci Resolve</h3>
+                  <p className="text-sm text-gray-400 mt-0.5">Primary editing, color, and finishing suite.</p>
+                </div>
+              </div>
+
+              {/* Premiere Pro */}
+              <div className="group flex items-center gap-4 p-5 rounded-2xl glass hover:bg-white/[0.03] transition-all duration-500">
+                <img
+                  src="/premiere.png"
+                  alt="Premiere Pro"
+                  className="w-12 h-12 object-contain grayscale opacity-60 transition-all duration-500 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105"
+                />
+                <div>
+                  <h3 className="text-sm font-medium text-foreground">Premiere Pro</h3>
+                  <p className="text-sm text-gray-400 mt-0.5">Extensive experience for versatile Adobe workflows.</p>
+                </div>
+              </div>
+
+              {/* Generative AI */}
+              <div className="group flex items-center gap-4 p-5 rounded-2xl glass hover:bg-white/[0.03] transition-all duration-500">
+                <img
+                  src="/ai-sparkle.png"
+                  alt="Generative AI"
+                  className="w-12 h-12 object-contain grayscale opacity-60 transition-all duration-500 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105"
+                />
+                <div>
+                  <h3 className="text-sm font-medium text-foreground">Generative AI</h3>
+                  <p className="text-sm text-gray-400 mt-0.5">I can also Integrate advanced AI tools to accelerate the creative process if needed.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="mt-14 p-8 rounded-3xl glass shadow-elegant">
             <h2 className="font-serif text-2xl text-foreground mb-2">
               Let's work together
