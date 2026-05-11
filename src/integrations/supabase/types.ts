@@ -86,6 +86,42 @@ export type Database = {
         }
         Relationships: []
       }
+      page_content: {
+        Row: {
+          id: string
+          page: string
+          heading: string
+          body_paragraph_1: string
+          body_paragraph_2: string
+          contact_heading: string
+          contact_body: string
+          email: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          page?: string
+          heading?: string
+          body_paragraph_1?: string
+          body_paragraph_2?: string
+          contact_heading?: string
+          contact_body?: string
+          email?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          page?: string
+          heading?: string
+          body_paragraph_1?: string
+          body_paragraph_2?: string
+          contact_heading?: string
+          contact_body?: string
+          email?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

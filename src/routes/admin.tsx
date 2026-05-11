@@ -8,7 +8,7 @@ import {
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, LayoutGrid, Settings, LogOut, ExternalLink } from "lucide-react";
+import { Loader2, LayoutGrid, Settings, FileText, LogOut, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -49,6 +49,7 @@ function AdminLayout() {
 
   const navItems = [
     { to: "/admin" as const, label: "Work", icon: LayoutGrid, exact: true },
+    { to: "/admin/about" as const, label: "About", icon: FileText, exact: false },
     { to: "/admin/settings" as const, label: "Settings", icon: Settings, exact: false },
   ];
 

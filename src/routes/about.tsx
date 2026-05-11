@@ -1,7 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { useSiteLock } from "@/hooks/use-site-lock";
 import { LockedScreen } from "@/components/locked-screen";
 import { SiteHeader } from "@/components/site-header";
+import { supabase } from "@/integrations/supabase/client";
+
+interface AboutContent {
+  heading: string;
+  body_paragraph_1: string;
+  body_paragraph_2: string;
+  contact_heading: string;
+  contact_body: string;
+  email: string;
+}
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -24,7 +35,23 @@ export const Route = createFileRoute("/about")({
 
 function AboutPage() {
   const isLocked = useSiteLock();
-  if (isLocked === null) return <div className="min-h-dvh bg-background" />;
+  const [content, setContent] = useState<AboutContent | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase
+      .from("page_content")
+      .select("heading,body_paragraph_1,body_paragraph_2,contact_heading,contact_body,email")
+      .eq("page", "about")
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setContent(data);
+        setLoading(false);
+      });
+  }, []);
+
+  if (isLocked === null || loading) return <div className="min-h-dvh bg-background" />;
   if (isLocked) return <LockedScreen />;
 
   return (
@@ -36,16 +63,12 @@ function AboutPage() {
             About
           </p>
           <h1 className="font-serif text-5xl md:text-6xl tracking-tight text-foreground text-balance leading-[1.05] mb-10">
-            Versatility in every cut.
+            {content?.heading ?? "Versatility in every cut."}
           </h1>
 
           <div className="space-y-6 text-lg text-muted-foreground leading-relaxed">
-            <p>
-              I'm Marcell, a freelance video editor with over 5 years of experience shaping visual stories. While my foundation was built in Premiere Pro, I now work primarily in DaVinci Resolve Studio, utilizing Fusion to integrate clean, dynamic motion graphics directly into the edit.
-            </p>
-            <p>
-              My work covers a vast range of styles and formats. I've edited fast-paced supercar test drives at the Hungaroring in both standard and 360-degree video, crafted cinematic drone and social campaigns for travel agencies, and delivered fast-paced commercial ads. From emotional proposal films and long-form YouTube content to snappy short-form social media, POV footage, and polished talking heads, I adapt the pacing to fit the exact vibe of the project.
-            </p>
+            <p>{content?.body_paragraph_1 ?? ""}</p>
+            <p>{content?.body_paragraph_2 ?? ""}</p>
           </div>
 
           {/* Tools & Workflow */}
@@ -97,16 +120,16 @@ function AboutPage() {
 
           <div className="mt-14 p-8 rounded-3xl glass shadow-elegant">
             <h2 className="font-serif text-2xl text-foreground mb-2">
-              Let's work together
+              {content?.contact_heading ?? "Let's work together"}
             </h2>
             <p className="text-muted-foreground mb-6">
-              For project inquiries, rates, or just to say hello.
+              {content?.contact_body ?? "For project inquiries, rates, or just to say hello."}
             </p>
             <a
-              href="mailto:red.edits2244@gmail.com"
+              href={`mailto:${content?.email ?? "red.edits2244@gmail.com"}`}
               className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity"
             >
-              red.edits2244@gmail.com
+              {content?.email ?? "red.edits2244@gmail.com"}
             </a>
           </div>
         </div>
