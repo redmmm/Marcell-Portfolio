@@ -59,25 +59,30 @@ function AdminAbout() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!contentId) return;
-
     setSaving(true);
-    const { error } = await supabase
+
+    const payload = {
+      ...(contentId ? { id: contentId } : {}),
+      page: "about",
+      heading: heading.trim(),
+      body_paragraph_1: body1.trim(),
+      body_paragraph_2: body2.trim(),
+      contact_heading: contactHeading.trim(),
+      contact_body: contactBody.trim(),
+      email: email.trim(),
+    };
+
+    const { data: upserted, error } = await supabase
       .from("page_content")
-      .update({
-        heading: heading.trim(),
-        body_paragraph_1: body1.trim(),
-        body_paragraph_2: body2.trim(),
-        contact_heading: contactHeading.trim(),
-        contact_body: contactBody.trim(),
-        email: email.trim(),
-      })
-      .eq("id", contentId);
+      .upsert(payload, { onConflict: "id" })
+      .select("id")
+      .maybeSingle();
 
     setSaving(false);
     if (error) {
       toast.error(error.message);
     } else {
+      if (upserted?.id && !contentId) setContentId(upserted.id);
       toast.success("About page updated");
     }
   }

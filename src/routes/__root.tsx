@@ -30,13 +30,13 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Aperture — Video Editor Portfolio" },
+      { title: "Marcell's Video Editor Portfolio" },
       {
         name: "description",
         content:
           "A curated portfolio of cinematic video editing work. Crafting narratives that resonate.",
       },
-      { property: "og:title", content: "Aperture — Video Editor Portfolio" },
+      { property: "og:title", content: "Marcell's Video Editor Portfolio" },
       {
         property: "og:description",
         content: "A curated portfolio of cinematic video editing work.",
@@ -45,6 +45,7 @@ export const Route = createRootRoute({
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
+      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },

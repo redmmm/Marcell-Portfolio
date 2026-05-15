@@ -17,13 +17,13 @@ interface AboutContent {
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
-      { title: "About — Aperture" },
+      { title: "About — Marcell's Video Editor Portfolio" },
       {
         name: "description",
         content:
           "About the editor — experience, approach, and how to get in touch.",
       },
-      { property: "og:title", content: "About — Aperture" },
+      { property: "og:title", content: "About — Marcell's Video Editor Portfolio" },
       {
         property: "og:description",
         content: "About the editor — experience, approach, and contact info.",

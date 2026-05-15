@@ -51,7 +51,7 @@ function LoginPage() {
           to="/"
           className="inline-block mb-10 font-serif text-2xl text-primary"
         >
-          Aperture
+          Marcell's Portfolio
         </Link>
         <div className="rounded-3xl glass shadow-elegant p-8">
           <h1 className="font-serif text-3xl text-foreground mb-1">

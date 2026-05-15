@@ -57,7 +57,7 @@ function AdminLayout() {
     <div className="min-h-dvh bg-background flex">
       <aside className="hidden md:flex w-64 flex-col border-r border-border/60 bg-sidebar p-6">
         <Link to="/" className="font-serif text-2xl text-primary mb-10">
-          Aperture
+          Marcell's Portfolio
         </Link>
         <nav className="space-y-1 flex-1">
           {navItems.map((item) => {
@@ -103,7 +103,7 @@ function AdminLayout() {
 
       {/* Mobile top bar */}
       <div className="md:hidden fixed top-0 inset-x-0 z-30 glass border-b border-border/60 px-4 py-3 flex items-center justify-between">
-        <Link to="/" className="font-serif text-lg text-primary">Aperture</Link>
+        <Link to="/" className="font-serif text-lg text-primary">Marcell's Portfolio</Link>
         <div className="flex items-center gap-1">
           {navItems.map((item) => (
             <Link

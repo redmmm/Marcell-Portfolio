@@ -9,7 +9,7 @@ import { VideoCard } from "@/components/video-card";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Aperture — Selected Work" },
+      { title: "Marcell's Video Editor Portfolio — Selected Work" },
       {
         name: "description",
         content:
