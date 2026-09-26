@@ -63,24 +63,16 @@ function HomePage() {
   }, [videos, selectedCategory]);
 
   if (isLocked === null) {
-    return <div className="min-h-dvh bg-background" />;
+    return <div className="min-h-dvh bg-transparent" />;
   }
 
   if (isLocked) return <LockedScreen />;
 
   return (
-    <div className="min-h-dvh bg-background">
+    <div className="min-h-dvh bg-transparent relative z-10">
       <SiteHeader />
 
       <section className="relative pt-40 pb-16 px-6 text-center overflow-hidden">
-        <div
-          aria-hidden
-          className="absolute inset-0 -z-10 opacity-60"
-          style={{
-            background:
-              "radial-gradient(ellipse at top, oklch(78% 0.14 75 / 0.12), transparent 60%)",
-          }}
-        />
         <div className="mx-auto max-w-4xl animate-fade-up">
           <p className="text-xs uppercase tracking-[0.3em] text-primary mb-6">
             VIDEO EDITOR • PORTFOLIO
