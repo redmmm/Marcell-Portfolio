@@ -45,355 +45,217 @@ function hexToRgb(hex: string): [number, number, number] {
 
 const VERTEX_SHADER = `
 attribute vec2 a_position;
+varying vec2 vUv;
+
 void main() {
+  vUv = a_position * 0.5 + 0.5;
   gl_Position = vec4(a_position, 0.0, 1.0);
 }
 `;
 
-// Pure GLSL ES 1.00 compliant fragment shader
-// Deep dark background with crisp, luminous iridescent silk ridges
 const FRAGMENT_SHADER = `
 precision highp float;
 
-uniform vec2 u_resolution;
-uniform float u_time;
-uniform float u_layers;
-uniform float u_turbulence;
-uniform float u_zoom;
-uniform vec2 u_shift;
-uniform float u_ridgeFrequency;
-uniform float u_ridgePhase;
-uniform float u_density;
-uniform float u_flowSpeed;
-uniform float u_churnSpeed;
-uniform float u_swirl;
-uniform float u_exposure;
-uniform float u_gain;
-uniform float u_colorCycle;
-uniform float u_rotation;
-uniform float u_grain;
-uniform float u_opacity;
-uniform vec3 u_colorA;
-uniform vec3 u_colorB;
-uniform vec3 u_colorC;
-uniform vec3 u_bgColor;
+#define MAX_LAYERS 15
+#define MAX_DETAIL 10
 
-// 2D Rotation
-vec2 rotate2D(vec2 p, float rad) {
-  float c = cos(rad);
-  float s = sin(rad);
-  return vec2(p.x * c - p.y * s, p.x * s + p.y * c);
-}
+varying vec2 vUv;
 
-// Pseudo-random hash
+uniform vec2 uResolution;
+uniform float uFlow;
+uniform float uChurn;
+uniform float uLayers;
+uniform float uDetail;
+uniform float uTurbulence;
+uniform float uZoom;
+uniform vec2 uShift;
+uniform float uRidgeFrequency;
+uniform float uRidgePhase;
+uniform float uDensity;
+uniform float uSwirl;
+uniform float uExposure;
+uniform float uGain;
+uniform vec3 uColorA;
+uniform vec3 uColorB;
+uniform vec3 uColorC;
+uniform float uColorCycle;
+uniform float uRotation;
+uniform float uGrain;
+uniform float uOpacity;
+uniform vec3 uBackground;
+uniform float uInk;
+
 float hash(vec2 p) {
-  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+  p = fract(p * vec2(443.897, 441.423));
+  p += dot(p, p.yx + 19.19);
+  return fract(p.x * p.y);
 }
 
-// Value noise
-float vnoise(vec2 p) {
-  vec2 i = floor(p);
-  vec2 f = fract(p);
-  f = f * f * (3.0 - 2.0 * f);
-  float a = hash(i);
-  float b = hash(i + vec2(1.0, 0.0));
-  float c = hash(i + vec2(0.0, 1.0));
-  float d = hash(i + vec2(1.0, 1.0));
-  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+vec3 palette(float layer) {
+  vec3 w = 0.25 + 1.0 * cos(layer * uColorCycle + vec3(0.0, 2.094395, 4.18879));
+  return uColorA * w.x + uColorB * w.y + uColorC * w.z;
 }
 
-// 4-octave silk turbulence
-float silkTurbulence(vec2 p, float churnTime) {
-  float v = 0.500 * vnoise(p * 1.00 + vec2(churnTime * 0.15, -churnTime * 0.10));
-  v += 0.260 * vnoise(p * 2.02 + vec2(churnTime * 0.20, -churnTime * 0.15));
-  v += 0.135 * vnoise(p * 4.08 + vec2(churnTime * 0.25, -churnTime * 0.20));
-  v += 0.070 * vnoise(p * 8.24 + vec2(churnTime * 0.30, -churnTime * 0.25));
-  return v;
-}
-
-// 3-point iridescent palette
-vec3 getIridescentPalette(float t) {
-  float phase = fract(t);
-  if (phase < 0.333) {
-    return mix(u_colorA, u_colorB, smoothstep(0.0, 0.333, phase));
-  } else if (phase < 0.666) {
-    return mix(u_colorB, u_colorC, smoothstep(0.333, 0.666, phase));
-  } else {
-    return mix(u_colorC, u_colorA, smoothstep(0.666, 1.0, phase));
-  }
+vec3 fastTanh(vec3 x) {
+  vec3 cx = clamp(x, 0.0, 15.0);
+  vec3 exp2x = exp(2.0 * cx);
+  return (exp2x - 1.0) / (exp2x + 1.0);
 }
 
 void main() {
-  vec2 res = max(u_resolution, vec2(10.0, 10.0));
-  vec2 uv = (gl_FragCoord.xy - 0.5 * res) / min(res.x, res.y);
+  float c = cos(uRotation);
+  float sn = sin(uRotation);
+  vec2 turned = mat2(c, -sn, sn, c) * (vUv - 0.5) + 0.5;
+  vec2 uv = (turned - 1.0) * uZoom - uShift;
 
-  // Apply rotation, zoom and shift
-  float rad = u_rotation * 0.0174532925;
-  uv = rotate2D(uv, rad);
-  uv = uv * u_zoom + u_shift;
+  vec2 p = (uv + vec2(0.6, -0.1)) * uDensity;
 
-  float flowTime = u_time * u_flowSpeed;
-  float churnTime = u_time * u_churnSpeed;
+  uv *= sin(log(max(abs(uv.y), 1e-4)) * uRidgeFrequency + uRidgePhase);
 
-  // Swirl center distortion
-  float dist = length(uv);
-  float swirlAngle = dist * (u_swirl * 0.12) - flowTime * 0.4;
-  vec2 swirledUV = rotate2D(uv, swirlAngle * u_turbulence);
+  float radius = normalize(vec3(length(uv), 0.1, 0.51)).x;
+  float drift = (log2(radius) * 15.0 + uFlow) * uSwirl;
+  float bearing = sin(atan(uv.y, uv.x));
+  vec2 push = sin(vec2(bearing, drift));
 
-  vec3 accumGlow = vec3(0.0);
+  vec3 film = vec3(0.0);
+  for (int i = 0; i < MAX_LAYERS; i++) {
+    float fi = float(i);
+    if (fi >= uLayers) break;
+    float layer = fi + 1.0;
 
-  // 10 fixed iterations
-  for (int i = 0; i < 10; i++) {
-    float layerIdx = float(i);
-    float layerNorm = layerIdx / max(u_layers, 1.0);
-    float layerPhase = layerNorm * 6.283185;
-    float activeMask = step(layerIdx, u_layers - 0.5);
+    vec2 v = p;
+    float f = 1.0;
+    for (int k = 0; k < MAX_DETAIL; k++) {
+      float fk = float(k);
+      if (fk >= uDetail) break;
 
-    // Layer-specific warped flow coordinate
-    vec2 p = swirledUV * u_density;
-    p.y += sin(p.x * 0.6 + layerPhase + flowTime) * (u_turbulence * 1.3);
-    p.x += cos(p.y * 0.7 - layerPhase * 0.5 + flowTime * 0.8) * (u_turbulence * 1.0);
+      v += (tan(cos(v.yx * f + f + layer - uChurn)) * uTurbulence + 2.5) / f;
+      v += push;
+      f *= 1.5;
+    }
 
-    // Turbulence modulation
-    float turb = silkTurbulence(p, churnTime + layerPhase);
-    p += turb * (u_turbulence * 1.5);
-
-    // Folded silk wave profile
-    float wave1 = sin(p.x * u_ridgeFrequency + p.y * 0.75 + layerPhase + u_ridgePhase);
-    float wave2 = cos(p.y * (u_ridgeFrequency * 1.3) - p.x * 0.5 + flowTime * 1.0);
-    float composite = wave1 * 0.65 + wave2 * 0.35;
-
-    // SHARP RIDGE: strictly localized to the fold crests
-    // Where abs(composite) is high, ridge drops cleanly to 0.0 (pure dark background!)
-    float ridge = max(0.0, 1.0 - abs(composite) * 2.8);
-    ridge = pow(ridge, 4.0);
-
-    // Fine raking specular sheen along the ridge
-    float sheen = pow(ridge, 2.5) * 1.6;
-
-    // Iridescent color along the fold
-    float colorOffset = fract(layerNorm * 0.7 + composite * 0.25 + u_time * (u_colorCycle * 0.08));
-    vec3 layerColor = getIridescentPalette(colorOffset);
-
-    // Core highlight
-    vec3 ridgeColor = mix(layerColor, vec3(0.9, 0.95, 1.0), sheen * 0.35);
-
-    accumGlow += ridgeColor * (ridge * 0.85 + sheen * 0.5) * activeMask;
+    film += palette(layer) / (5.0 * length(v));
   }
 
-  // Soft tone compression only on glowing peaks (never lifts black levels!)
-  vec3 glow = accumGlow * u_exposure;
-  glow = glow / (vec3(1.0) + glow * 0.4);
-  glow = pow(clamp(glow, 0.0, 1.0), vec3(1.0 / max(u_gain, 0.1)));
+  vec3 light = fastTanh(max(film, 0.0) * uExposure) * uGain;
 
-  // Add subtle film grain to the dark base and glow
-  float grainNoise = (hash(gl_FragCoord.xy + fract(u_time * 19.17) * 100.0) - 0.5) * (u_grain * 0.03);
+  float noise = hash(gl_FragCoord.xy + fract(uChurn) * 1000.0) - 0.5;
+  light *= 1.0 + noise * uGrain;
+  light *= uOpacity;
 
-  // Pure dark background + additive glowing silk ridges
-  vec3 finalColor = u_bgColor + glow * u_opacity + vec3(grainNoise);
+  vec3 lit = uBackground + light;
 
-  gl_FragColor = vec4(clamp(finalColor, 0.0, 1.0), 1.0);
+  float amount = max(light.r, max(light.g, light.b));
+  float coverage = smoothstep(0.08, 0.6, amount);
+  vec3 pigment = amount > 0.0001 ? light / amount : vec3(1.0);
+  vec3 inked = uBackground * mix(vec3(1.0), pigment * 0.75, coverage);
+
+  gl_FragColor = vec4(clamp(mix(lit, inked, uInk), 0.0, 1.0), 1.0);
 }
 `;
 
-export function GlowingRidges({
-  layers = 8,
-  detail = 4,
-  turbulence = 0.55,
+function createShader(gl: WebGLRenderingContext, type: number, source: string): WebGLShader | null {
+  const shader = gl.createShader(type);
+  if (!shader) return null;
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    console.error("Shader compile error:", gl.getShaderInfoLog(shader));
+    gl.deleteShader(shader);
+    return null;
+  }
+  return shader;
+}
+
+export const GlowingRidges: React.FC<GlowingRidgesProps> = ({
+  layers = 12,
+  detail = 5,
+  turbulence = 0.6,
   zoom = 1.1,
   shiftX = 0.45,
   shiftY = 0.5,
-  ridgeFrequency = 1.0,
-  ridgePhase = 2.0,
-  density = 9.0,
-  flowSpeed = 0.07,
-  churnSpeed = 0.7,
-  swirl = 12.0,
-  exposure = 0.6,
-  gain = 1.6,
-  colorCycle = 0.3,
-  rotation = 0.0,
-  grain = 0.15,
-  opacity = 0.85,
-  colorA = "#00d4ff",
-  colorB = "#cbdaf2",
-  colorC = "#818cf8",
-  backgroundColor = "#090b10",
+  ridgeFrequency = 1,
+  ridgePhase = 2,
+  density = 11,
+  flowSpeed = 0.1,
+  churnSpeed = 1,
+  swirl = 16,
+  exposure = 0.25,
+  gain = 2,
+  colorA = "#ff6a2a",
+  colorB = "#22d3ee",
+  colorC = "#c026d3",
+  colorCycle = 0.4,
+  rotation = 0,
+  grain = 0.25,
+  opacity = 0.75,
+  backgroundColor = "#000000",
+  blend = "add",
   paused = false,
   dpr = 1,
-  className = "",
+  className,
   children,
-}: GlowingRidgesProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animFrameRef = useRef<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isVisibleRef = useRef(true);
+
+  // References to keep up-to-date props without tearing down WebGL program
+  const propsRef = useRef({
+    layers,
+    detail,
+    turbulence,
+    zoom,
+    shiftX,
+    shiftY,
+    ridgeFrequency,
+    ridgePhase,
+    density,
+    flowSpeed,
+    churnSpeed,
+    swirl,
+    exposure,
+    gain,
+    colorA,
+    colorB,
+    colorC,
+    colorCycle,
+    rotation,
+    grain,
+    opacity,
+    backgroundColor,
+    blend,
+    paused,
+    dpr,
+  });
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!canvas || !container) return;
-
-    const gl =
-      canvas.getContext("webgl", {
-        alpha: false,
-        antialias: false,
-        powerPreference: "low-power",
-      }) ||
-      (canvas.getContext("experimental-webgl") as WebGLRenderingContext | null);
-
-    if (!gl) {
-      console.warn("[GlowingRidges] WebGL not supported");
-      return;
-    }
-
-    function createShader(type: number, source: string) {
-      const shader = gl!.createShader(type);
-      if (!shader) return null;
-      gl!.shaderSource(shader, source);
-      gl!.compileShader(shader);
-      if (!gl!.getShaderParameter(shader, gl!.COMPILE_STATUS)) {
-        console.error("[GlowingRidges] Shader compile error:", gl!.getShaderInfoLog(shader));
-        gl!.deleteShader(shader);
-        return null;
-      }
-      return shader;
-    }
-
-    const vs = createShader(gl.VERTEX_SHADER, VERTEX_SHADER);
-    const fs = createShader(gl.FRAGMENT_SHADER, FRAGMENT_SHADER);
-    if (!vs || !fs) return;
-
-    const program = gl.createProgram();
-    if (!program) return;
-    gl.attachShader(program, vs);
-    gl.attachShader(program, fs);
-    gl.linkProgram(program);
-
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      console.error("[GlowingRidges] Program link error:", gl.getProgramInfoLog(program));
-      return;
-    }
-
-    gl.useProgram(program);
-
-    // Fullscreen quad buffer
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(
-      gl.ARRAY_BUFFER,
-      new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]),
-      gl.STATIC_DRAW
-    );
-
-    const aPosition = gl.getAttribLocation(program, "a_position");
-    gl.enableVertexAttribArray(aPosition);
-    gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, 0, 0);
-
-    // Uniform locations
-    const uResolution = gl.getUniformLocation(program, "u_resolution");
-    const uTime = gl.getUniformLocation(program, "u_time");
-    const uLayers = gl.getUniformLocation(program, "u_layers");
-    const uTurbulence = gl.getUniformLocation(program, "u_turbulence");
-    const uZoom = gl.getUniformLocation(program, "u_zoom");
-    const uShift = gl.getUniformLocation(program, "u_shift");
-    const uRidgeFrequency = gl.getUniformLocation(program, "u_ridgeFrequency");
-    const uRidgePhase = gl.getUniformLocation(program, "u_ridgePhase");
-    const uDensity = gl.getUniformLocation(program, "u_density");
-    const uFlowSpeed = gl.getUniformLocation(program, "u_flowSpeed");
-    const uChurnSpeed = gl.getUniformLocation(program, "u_churnSpeed");
-    const uSwirl = gl.getUniformLocation(program, "u_swirl");
-    const uExposure = gl.getUniformLocation(program, "u_exposure");
-    const uGain = gl.getUniformLocation(program, "u_gain");
-    const uColorCycle = gl.getUniformLocation(program, "u_colorCycle");
-    const uRotation = gl.getUniformLocation(program, "u_rotation");
-    const uGrain = gl.getUniformLocation(program, "u_grain");
-    const uOpacity = gl.getUniformLocation(program, "u_opacity");
-    const uColorA = gl.getUniformLocation(program, "u_colorA");
-    const uColorB = gl.getUniformLocation(program, "u_colorB");
-    const uColorC = gl.getUniformLocation(program, "u_colorC");
-    const uBgColor = gl.getUniformLocation(program, "u_bgColor");
-
-    function resize() {
-      if (!canvas || !container || !gl) return;
-      const rect = container.getBoundingClientRect();
-      const pixelRatio = Math.min(window.devicePixelRatio || 1, dpr);
-      const w = Math.max(10, Math.floor((rect.width || window.innerWidth) * pixelRatio));
-      const h = Math.max(10, Math.floor((rect.height || window.innerHeight) * pixelRatio));
-
-      if (canvas.width !== w || canvas.height !== h) {
-        canvas.width = w;
-        canvas.height = h;
-      }
-      gl.viewport(0, 0, canvas.width, canvas.height);
-    }
-
-    resize();
-    const resizeObserver = new ResizeObserver(resize);
-    resizeObserver.observe(container);
-    window.addEventListener("resize", resize);
-
-    const startTime = performance.now();
-    let lastRenderTime = 0;
-
-    function render(now: number) {
-      if (!gl || !program || !canvas) return;
-
-      const elapsed = !paused ? (now - startTime) * 0.001 : lastRenderTime;
-      lastRenderTime = elapsed;
-
-      gl.useProgram(program);
-
-      const w = canvas.width || window.innerWidth || 800;
-      const h = canvas.height || window.innerHeight || 600;
-
-      gl.uniform2f(uResolution, w, h);
-      gl.uniform1f(uTime, elapsed);
-      gl.uniform1f(uLayers, Math.min(10.0, Math.max(1.0, layers)));
-      gl.uniform1f(uTurbulence, turbulence);
-      gl.uniform1f(uZoom, zoom);
-      gl.uniform2f(uShift, shiftX - 0.5, shiftY - 0.5);
-      gl.uniform1f(uRidgeFrequency, ridgeFrequency);
-      gl.uniform1f(uRidgePhase, ridgePhase);
-      gl.uniform1f(uDensity, density);
-      gl.uniform1f(uFlowSpeed, flowSpeed);
-      gl.uniform1f(uChurnSpeed, churnSpeed);
-      gl.uniform1f(uSwirl, swirl);
-      gl.uniform1f(uExposure, exposure);
-      gl.uniform1f(uGain, gain);
-      gl.uniform1f(uColorCycle, colorCycle);
-      gl.uniform1f(uRotation, rotation);
-      gl.uniform1f(uGrain, grain);
-      gl.uniform1f(uOpacity, opacity);
-
-      const rgbA = hexToRgb(colorA);
-      const rgbB = hexToRgb(colorB);
-      const rgbC = hexToRgb(colorC);
-      const rgbBg = hexToRgb(backgroundColor);
-
-      gl.uniform3f(uColorA, rgbA[0], rgbA[1], rgbA[2]);
-      gl.uniform3f(uColorB, rgbB[0], rgbB[1], rgbB[2]);
-      gl.uniform3f(uColorC, rgbC[0], rgbC[1], rgbC[2]);
-      gl.uniform3f(uBgColor, rgbBg[0], rgbBg[1], rgbBg[2]);
-
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-      animFrameRef.current = requestAnimationFrame(render);
-    }
-
-    animFrameRef.current = requestAnimationFrame(render);
-
-    return () => {
-      if (animFrameRef.current) {
-        cancelAnimationFrame(animFrameRef.current);
-      }
-      resizeObserver.disconnect();
-      window.removeEventListener("resize", resize);
-      if (gl) {
-        gl.deleteBuffer(positionBuffer);
-        gl.deleteProgram(program);
-        gl.deleteShader(vs);
-        gl.deleteShader(fs);
-      }
+    propsRef.current = {
+      layers,
+      detail,
+      turbulence,
+      zoom,
+      shiftX,
+      shiftY,
+      ridgeFrequency,
+      ridgePhase,
+      density,
+      flowSpeed,
+      churnSpeed,
+      swirl,
+      exposure,
+      gain,
+      colorA,
+      colorB,
+      colorC,
+      colorCycle,
+      rotation,
+      grain,
+      opacity,
+      backgroundColor,
+      blend,
+      paused,
+      dpr,
     };
   }, [
     layers,
@@ -410,29 +272,208 @@ export function GlowingRidges({
     swirl,
     exposure,
     gain,
+    colorA,
+    colorB,
+    colorC,
     colorCycle,
     rotation,
     grain,
     opacity,
-    colorA,
-    colorB,
-    colorC,
     backgroundColor,
+    blend,
     paused,
     dpr,
   ]);
 
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || typeof IntersectionObserver === "undefined") return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isVisibleRef.current = entry.isIntersecting;
+      },
+      { threshold: 0 }
+    );
+    observer.observe(container);
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const gl =
+      canvas.getContext("webgl", {
+        antialias: false,
+        alpha: false,
+        powerPreference: "high-performance",
+        preserveDrawingBuffer: false,
+      }) ||
+      (canvas.getContext("experimental-webgl") as WebGLRenderingContext | null);
+
+    if (!gl) {
+      console.warn("WebGL not supported for GlowingRidges.");
+      return;
+    }
+
+    const vs = createShader(gl, gl.VERTEX_SHADER, VERTEX_SHADER);
+    const fs = createShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER);
+    if (!vs || !fs) return;
+
+    const program = gl.createProgram();
+    if (!program) return;
+
+    gl.attachShader(program, vs);
+    gl.attachShader(program, fs);
+    gl.linkProgram(program);
+
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.error("Program link error:", gl.getProgramInfoLog(program));
+      return;
+    }
+
+    gl.useProgram(program);
+
+    // Quad geometry covering [-1, 1]
+    const quadVertices = new Float32Array([
+      -1, -1,
+       1, -1,
+      -1,  1,
+      -1,  1,
+       1, -1,
+       1,  1,
+    ]);
+
+    const vertexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, quadVertices, gl.STATIC_DRAW);
+
+    const posAttrib = gl.getAttribLocation(program, "a_position");
+    gl.enableVertexAttribArray(posAttrib);
+    gl.vertexAttribPointer(posAttrib, 2, gl.FLOAT, false, 0, 0);
+
+    // Uniform locations
+    const locResolution = gl.getUniformLocation(program, "uResolution");
+    const locFlow = gl.getUniformLocation(program, "uFlow");
+    const locChurn = gl.getUniformLocation(program, "uChurn");
+    const locLayers = gl.getUniformLocation(program, "uLayers");
+    const locDetail = gl.getUniformLocation(program, "uDetail");
+    const locTurbulence = gl.getUniformLocation(program, "uTurbulence");
+    const locZoom = gl.getUniformLocation(program, "uZoom");
+    const locShift = gl.getUniformLocation(program, "uShift");
+    const locRidgeFrequency = gl.getUniformLocation(program, "uRidgeFrequency");
+    const locRidgePhase = gl.getUniformLocation(program, "uRidgePhase");
+    const locDensity = gl.getUniformLocation(program, "uDensity");
+    const locSwirl = gl.getUniformLocation(program, "uSwirl");
+    const locExposure = gl.getUniformLocation(program, "uExposure");
+    const locGain = gl.getUniformLocation(program, "uGain");
+    const locColorA = gl.getUniformLocation(program, "uColorA");
+    const locColorB = gl.getUniformLocation(program, "uColorB");
+    const locColorC = gl.getUniformLocation(program, "uColorC");
+    const locColorCycle = gl.getUniformLocation(program, "uColorCycle");
+    const locRotation = gl.getUniformLocation(program, "uRotation");
+    const locGrain = gl.getUniformLocation(program, "uGrain");
+    const locOpacity = gl.getUniformLocation(program, "uOpacity");
+    const locBackground = gl.getUniformLocation(program, "uBackground");
+    const locInk = gl.getUniformLocation(program, "uInk");
+
+    let animId: number;
+    let lastTime = performance.now();
+    let flowAccum = 0;
+    let churnAccum = 0;
+
+    const resize = () => {
+      const parent = canvas.parentElement;
+      const width = parent ? parent.clientWidth : window.innerWidth;
+      const height = parent ? parent.clientHeight : window.innerHeight;
+      const pixelRatio = Math.min(window.devicePixelRatio || 1, propsRef.current.dpr || 1);
+      const displayWidth = Math.max(1, Math.floor(width * pixelRatio));
+      const displayHeight = Math.max(1, Math.floor(height * pixelRatio));
+
+      if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+        canvas.width = displayWidth;
+        canvas.height = displayHeight;
+        gl.viewport(0, 0, displayWidth, displayHeight);
+      }
+    };
+
+    window.addEventListener("resize", resize);
+    resize();
+
+    const render = (now: number) => {
+      animId = requestAnimationFrame(render);
+
+      if (!isVisibleRef.current) return;
+
+      const p = propsRef.current;
+      const delta = Math.min((now - lastTime) / 1000, 0.05);
+      lastTime = now;
+
+      if (!p.paused) {
+        flowAccum += delta * p.flowSpeed;
+        churnAccum += delta * p.churnSpeed;
+      }
+
+      resize();
+
+      gl.useProgram(program);
+
+      gl.uniform2f(locResolution, canvas.width, canvas.height);
+      gl.uniform1f(locFlow, flowAccum);
+      gl.uniform1f(locChurn, churnAccum);
+      gl.uniform1f(locLayers, Math.max(1, Math.min(15, p.layers)));
+      gl.uniform1f(locDetail, Math.max(1, Math.min(10, p.detail)));
+      gl.uniform1f(locTurbulence, Math.max(0, p.turbulence));
+      gl.uniform1f(locZoom, Math.max(0.05, p.zoom));
+      gl.uniform2f(locShift, p.shiftX, p.shiftY);
+      gl.uniform1f(locRidgeFrequency, p.ridgeFrequency);
+      gl.uniform1f(locRidgePhase, p.ridgePhase);
+      gl.uniform1f(locDensity, Math.max(0.1, p.density));
+      gl.uniform1f(locSwirl, p.swirl);
+      gl.uniform1f(locExposure, Math.max(0, p.exposure));
+      gl.uniform1f(locGain, Math.max(0, p.gain));
+
+      const colA = hexToRgb(p.colorA);
+      const colB = hexToRgb(p.colorB);
+      const colC = hexToRgb(p.colorC);
+      const colBg = hexToRgb(p.backgroundColor);
+
+      gl.uniform3f(locColorA, colA[0], colA[1], colA[2]);
+      gl.uniform3f(locColorB, colB[0], colB[1], colB[2]);
+      gl.uniform3f(locColorC, colC[0], colC[1], colC[2]);
+      gl.uniform3f(locBackground, colBg[0], colBg[1], colBg[2]);
+
+      gl.uniform1f(locColorCycle, p.colorCycle);
+      gl.uniform1f(locRotation, (p.rotation * Math.PI) / 180);
+      gl.uniform1f(locGrain, Math.max(0, Math.min(2, p.grain)));
+      gl.uniform1f(locOpacity, Math.max(0, Math.min(1, p.opacity)));
+      gl.uniform1f(locInk, p.blend === "ink" ? 1.0 : 0.0);
+
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+    };
+
+    animId = requestAnimationFrame(render);
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener("resize", resize);
+      gl.deleteBuffer(vertexBuffer);
+      gl.deleteShader(vs);
+      gl.deleteShader(fs);
+      gl.deleteProgram(program);
+    };
+  }, []);
+
   return (
-    <div
-      ref={containerRef}
-      className={`relative w-full h-full overflow-hidden ${className}`}
-    >
+    <div ref={containerRef} className={`relative overflow-hidden ${className || ""}`}>
       <canvas
         ref={canvasRef}
-        className="w-full h-full block"
-        style={{ display: "block", width: "100%", height: "100%" }}
+        className="absolute inset-0 w-full h-full block"
+        style={{ width: "100%", height: "100%" }}
       />
-      {children && <div className="relative z-10 w-full h-full">{children}</div>}
+      {children && <div className="relative z-10 h-full w-full">{children}</div>}
     </div>
   );
-}
+};

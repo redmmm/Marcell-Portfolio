@@ -4,7 +4,7 @@ interface BackgroundRidgesProps {
   opacity?: number;
 }
 
-export function BackgroundRidges({ opacity = 0.8 }: BackgroundRidgesProps) {
+export function BackgroundRidges({ opacity = 0.85 }: BackgroundRidgesProps) {
   return (
     <div
       aria-hidden="true"
@@ -12,27 +12,29 @@ export function BackgroundRidges({ opacity = 0.8 }: BackgroundRidgesProps) {
     >
       <GlowingRidges
         className="w-full h-full"
-        backgroundColor="#08090e"
-        colorA="#00d4ff"
-        colorB="#cbdaf2"
-        colorC="#818cf8"
-        layers={8}
-        detail={4}
-        turbulence={0.55}
+        backgroundColor="#000000"
+        colorA="#ff6a2a"
+        colorB="#22d3ee"
+        colorC="#c026d3"
+        layers={12}
+        detail={5}
+        turbulence={0.6}
         zoom={1.1}
         shiftX={0.45}
-        shiftY={0.45}
+        shiftY={0.5}
         ridgeFrequency={1.0}
         ridgePhase={2.0}
-        density={8.5}
+        density={11.0}
         flowSpeed={0.06}
-        churnSpeed={0.6}
-        swirl={12.0}
-        exposure={0.65}
-        gain={1.5}
-        colorCycle={0.25}
-        grain={0.12}
+        churnSpeed={0.3}
+        swirl={16.0}
+        exposure={0.25}
+        gain={2.0}
+        colorCycle={0.4}
+        rotation={0}
+        grain={0.15}
         opacity={opacity}
+        blend="add"
         dpr={1}
       />
     </div>
