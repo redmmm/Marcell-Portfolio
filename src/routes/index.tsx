@@ -5,6 +5,7 @@ import { useSiteLock } from "@/hooks/use-site-lock";
 import { LockedScreen } from "@/components/locked-screen";
 import { SiteHeader } from "@/components/site-header";
 import { VideoCard } from "@/components/video-card";
+import { BackgroundRidges } from "@/components/background-ridges";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -63,16 +64,19 @@ function HomePage() {
   }, [videos, selectedCategory]);
 
   if (isLocked === null) {
-    return <div className="min-h-dvh bg-transparent" />;
+    return <div className="min-h-dvh bg-background" />;
   }
 
   if (isLocked) return <LockedScreen />;
 
   return (
-    <div className="min-h-dvh bg-transparent relative z-10">
+    <div className="min-h-dvh bg-background relative">
+      {/* Background Glowing Ridges: strictly behind hero and filter tags */}
+      <BackgroundRidges className="absolute inset-x-0 top-0 h-[880px] lg:h-[950px] z-0" />
+
       <SiteHeader />
 
-      <section className="relative pt-40 pb-16 px-6 text-center overflow-hidden">
+      <section className="relative pt-40 pb-16 px-6 text-center overflow-hidden z-10">
         {/* Soft radial scrim to enhance text legibility over moving waves */}
         <div
           aria-hidden="true"
@@ -96,7 +100,7 @@ function HomePage() {
 
       {/* Category Filter Bar */}
       {uniqueCategories.length > 0 && (
-        <section className="px-6 pb-8 relative z-10">
+        <section className="px-6 pb-12 relative z-10">
           <div className="mx-auto max-w-7xl flex flex-col items-center gap-4">
             <button
               onClick={() => setSelectedCategory(null)}
@@ -127,13 +131,8 @@ function HomePage() {
         </section>
       )}
 
-      {/* Seamless, deep fade-to-background transition below filter tags */}
-      <div
-        aria-hidden="true"
-        className="h-72 -mt-20 -mb-28 pointer-events-none bg-gradient-to-b from-transparent via-[#040609]/30 via-20% via-[#040609]/75 via-60% to-[#040609] relative z-10"
-      />
-
-      <section className="px-6 pb-32 bg-background relative z-10">
+      {/* Video Grid Section: rests cleanly on original site background */}
+      <section className="px-6 pb-32 relative z-10">
         <div className="mx-auto max-w-7xl">
           {filteredVideos === null ? (
             <div className="flex items-center justify-center py-24">
@@ -161,7 +160,7 @@ function HomePage() {
         </div>
       </section>
 
-      <footer className="border-t border-border/60 py-10 px-6 bg-background relative z-10">
+      <footer className="border-t border-border/60 py-10 px-6 relative z-10">
         <div className="mx-auto max-w-7xl flex justify-center text-sm text-muted-foreground">
           <p>© {new Date().getFullYear()} — All rights reserved.</p>
         </div>

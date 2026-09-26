@@ -3,24 +3,30 @@ import { GlowingRidges } from "@/components/ui/glowing-ridges";
 interface BackgroundRidgesProps {
   opacity?: number;
   blur?: number;
+  className?: string;
 }
 
-export function BackgroundRidges({ opacity = 0.85, blur = 3.5 }: BackgroundRidgesProps) {
+export function BackgroundRidges({
+  opacity = 0.85,
+  blur = 3.5,
+  className = "",
+}: BackgroundRidgesProps) {
   return (
     <div
       aria-hidden="true"
-      className="fixed inset-0 pointer-events-none z-0 overflow-hidden"
+      className={`pointer-events-none overflow-hidden ${className}`}
       style={{
         WebkitMaskImage:
-          "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 42%, rgba(0,0,0,0.5) 68%, rgba(0,0,0,0) 95%)",
+          "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 38%, rgba(0,0,0,0.4) 68%, rgba(0,0,0,0) 96%)",
         maskImage:
-          "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 42%, rgba(0,0,0,0.5) 68%, rgba(0,0,0,0) 95%)",
+          "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 38%, rgba(0,0,0,0.4) 68%, rgba(0,0,0,0) 96%)",
       }}
     >
       <div
         className="w-full h-full scale-[1.03]"
         style={{
           filter: blur > 0 ? `blur(${blur}px)` : undefined,
+          mixBlendMode: "screen",
         }}
       >
         <GlowingRidges

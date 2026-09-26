@@ -1,6 +1,5 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts, useRouterState } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
-import { BackgroundRidges } from "@/components/background-ridges";
 
 import appCss from "../styles.css?url";
 
@@ -77,13 +76,5 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const isHome = pathname === "/";
-
-  return (
-    <>
-      {isHome && <BackgroundRidges />}
-      <Outlet />
-    </>
-  );
+  return <Outlet />;
 }
