@@ -50,7 +50,8 @@ void main() {
 }
 `;
 
-// Pure GLSL ES 1.00 compliant fragment shader (fully compatible with WebGL 1 & 2 across all browsers including Firefox/Zen)
+// Pure GLSL ES 1.00 compliant fragment shader
+// Deep dark background with crisp, luminous iridescent silk ridges
 const FRAGMENT_SHADER = `
 precision highp float;
 
@@ -101,7 +102,7 @@ float vnoise(vec2 p) {
   return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
 }
 
-// Fixed 4-octave silk turbulence (no non-constant loop breaks for 100% WebGL compatibility)
+// 4-octave silk turbulence
 float silkTurbulence(vec2 p, float churnTime) {
   float v = 0.500 * vnoise(p * 1.00 + vec2(churnTime * 0.15, -churnTime * 0.10));
   v += 0.260 * vnoise(p * 2.02 + vec2(churnTime * 0.20, -churnTime * 0.15));
@@ -136,13 +137,12 @@ void main() {
 
   // Swirl center distortion
   float dist = length(uv);
-  float swirlAngle = dist * (u_swirl * 0.15) - flowTime * 0.5;
+  float swirlAngle = dist * (u_swirl * 0.12) - flowTime * 0.4;
   vec2 swirledUV = rotate2D(uv, swirlAngle * u_turbulence);
 
-  vec3 accumFilm = vec3(0.0);
-  float totalWeight = 0.0;
+  vec3 accumGlow = vec3(0.0);
 
-  // 10 fixed iterations with dynamic alpha masking
+  // 10 fixed iterations
   for (int i = 0; i < 10; i++) {
     float layerIdx = float(i);
     float layerNorm = layerIdx / max(u_layers, 1.0);
@@ -151,83 +151,74 @@ void main() {
 
     // Layer-specific warped flow coordinate
     vec2 p = swirledUV * u_density;
-    p.y += sin(p.x * 0.6 + layerPhase + flowTime) * (u_turbulence * 1.4);
-    p.x += cos(p.y * 0.7 - layerPhase * 0.5 + flowTime * 0.8) * (u_turbulence * 1.1);
+    p.y += sin(p.x * 0.6 + layerPhase + flowTime) * (u_turbulence * 1.3);
+    p.x += cos(p.y * 0.7 - layerPhase * 0.5 + flowTime * 0.8) * (u_turbulence * 1.0);
 
     // Turbulence modulation
     float turb = silkTurbulence(p, churnTime + layerPhase);
-    p += turb * (u_turbulence * 1.6);
+    p += turb * (u_turbulence * 1.5);
 
-    // Folded silk ridge wave profile
+    // Folded silk wave profile
     float wave1 = sin(p.x * u_ridgeFrequency + p.y * 0.75 + layerPhase + u_ridgePhase);
-    float wave2 = cos(p.y * (u_ridgeFrequency * 1.35) - p.x * 0.55 + flowTime * 1.1);
+    float wave2 = cos(p.y * (u_ridgeFrequency * 1.3) - p.x * 0.5 + flowTime * 1.0);
     float composite = wave1 * 0.65 + wave2 * 0.35;
 
-    // Sharp raked light crest
-    float ridge = 1.0 - abs(composite);
-    ridge = pow(clamp(ridge, 0.0, 1.0), 3.0);
+    // SHARP RIDGE: strictly localized to the fold crests
+    // Where abs(composite) is high, ridge drops cleanly to 0.0 (pure dark background!)
+    float ridge = max(0.0, 1.0 - abs(composite) * 2.8);
+    ridge = pow(ridge, 4.0);
 
-    // Silk specular highlight
-    float sheen = pow(clamp(ridge, 0.0, 1.0), 5.0) * 1.5;
+    // Fine raking specular sheen along the ridge
+    float sheen = pow(ridge, 2.5) * 1.6;
 
-    // Iridescent color cycle
-    float colorOffset = fract(layerNorm * 0.6 + composite * 0.2 + u_time * (u_colorCycle * 0.08));
+    // Iridescent color along the fold
+    float colorOffset = fract(layerNorm * 0.7 + composite * 0.25 + u_time * (u_colorCycle * 0.08));
     vec3 layerColor = getIridescentPalette(colorOffset);
 
-    // Add sheen brightness to layer
-    layerColor = mix(layerColor, vec3(1.0), sheen * 0.4);
+    // Core highlight
+    vec3 ridgeColor = mix(layerColor, vec3(0.9, 0.95, 1.0), sheen * 0.35);
 
-    float layerWeight = (ridge * 0.9 + sheen * 1.2) * activeMask;
-    accumFilm += layerColor * layerWeight;
-    totalWeight += activeMask;
+    accumGlow += ridgeColor * (ridge * 0.85 + sheen * 0.5) * activeMask;
   }
 
-  // Normalize
-  vec3 color = accumFilm / max(totalWeight * 0.15, 0.001);
+  // Soft tone compression only on glowing peaks (never lifts black levels!)
+  vec3 glow = accumGlow * u_exposure;
+  glow = glow / (vec3(1.0) + glow * 0.4);
+  glow = pow(clamp(glow, 0.0, 1.0), vec3(1.0 / max(u_gain, 0.1)));
 
-  // Filmic exposure and tone mapping
-  color = color / (vec3(1.0) + color * 0.4);
-  color *= (u_exposure * 4.0);
-  color = pow(clamp(color, 0.0, 1.0), vec3(1.0 / max(u_gain, 0.1)));
+  // Add subtle film grain to the dark base and glow
+  float grainNoise = (hash(gl_FragCoord.xy + fract(u_time * 19.17) * 100.0) - 0.5) * (u_grain * 0.03);
 
-  // Film grain
-  if (u_grain > 0.0) {
-    float noise = (hash(gl_FragCoord.xy + fract(u_time * 17.31) * 100.0) - 0.5) * u_grain * 0.1;
-    color += noise;
-  }
-
-  // Composite with dark background
-  float brightness = clamp(dot(color, vec3(0.333)), 0.0, 1.0);
-  vec3 finalColor = u_bgColor + color * u_opacity;
-  finalColor = mix(finalColor, color, brightness * 0.35);
+  // Pure dark background + additive glowing silk ridges
+  vec3 finalColor = u_bgColor + glow * u_opacity + vec3(grainNoise);
 
   gl_FragColor = vec4(clamp(finalColor, 0.0, 1.0), 1.0);
 }
 `;
 
 export function GlowingRidges({
-  layers = 10,
+  layers = 8,
   detail = 4,
-  turbulence = 0.6,
+  turbulence = 0.55,
   zoom = 1.1,
   shiftX = 0.45,
   shiftY = 0.5,
   ridgeFrequency = 1.0,
   ridgePhase = 2.0,
-  density = 10.0,
-  flowSpeed = 0.08,
-  churnSpeed = 0.8,
-  swirl = 14.0,
-  exposure = 0.4,
-  gain = 1.8,
-  colorCycle = 0.35,
+  density = 9.0,
+  flowSpeed = 0.07,
+  churnSpeed = 0.7,
+  swirl = 12.0,
+  exposure = 0.6,
+  gain = 1.6,
+  colorCycle = 0.3,
   rotation = 0.0,
   grain = 0.15,
   opacity = 0.85,
-  colorA = "#38bdf8",
+  colorA = "#00d4ff",
   colorB = "#cbdaf2",
   colorC = "#818cf8",
-  backgroundColor = "#0a0c14",
+  backgroundColor = "#090b10",
   paused = false,
   dpr = 1,
   className = "",

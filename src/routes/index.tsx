@@ -119,7 +119,13 @@ function HomePage() {
         </section>
       )}
 
-      <section className="px-6 pb-32">
+      {/* Smooth fade-to-background transition below filter tags */}
+      <div
+        aria-hidden="true"
+        className="h-36 -mb-20 pointer-events-none bg-gradient-to-b from-transparent via-background/60 to-background relative z-10"
+      />
+
+      <section className="px-6 pb-32 bg-background relative z-10">
         <div className="mx-auto max-w-7xl">
           {filteredVideos === null ? (
             <div className="flex items-center justify-center py-24">
@@ -147,7 +153,7 @@ function HomePage() {
         </div>
       </section>
 
-      <footer className="border-t border-border/60 py-10 px-6">
+      <footer className="border-t border-border/60 py-10 px-6 bg-background relative z-10">
         <div className="mx-auto max-w-7xl flex justify-center text-sm text-muted-foreground">
           <p>© {new Date().getFullYear()} — All rights reserved.</p>
         </div>
