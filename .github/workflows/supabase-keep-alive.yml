@@ -1,0 +1,27 @@
+name: Supabase Keep-Alive Ping
+
+on:
+  schedule:
+    # 3 naponta hajnali 05:00 UTC-kor automatikusan lefut
+    - cron: '0 5 */3 * *'
+  # Manuális indítási lehetőség a GitHub Actions felületről (teszteléshez)
+  workflow_dispatch:
+
+jobs:
+  ping-supabase:
+    name: Ping Supabase Database
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run Keep-Alive Script
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: node scripts/keep-alive.mjs
