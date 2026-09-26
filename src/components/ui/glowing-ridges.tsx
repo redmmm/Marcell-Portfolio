@@ -389,14 +389,26 @@ export const GlowingRidges: React.FC<GlowingRidgesProps> = ({
 
     let animId: number;
     let lastTime = performance.now();
+    let lastFrameTime = performance.now();
     let flowAccum = 0;
     let churnAccum = 0;
+    let isDocumentVisible =
+      typeof document === "undefined" ? true : document.visibilityState === "visible";
+
+    const isMobileViewport = () => {
+      if (typeof window === "undefined") return false;
+      return window.innerWidth < 768 || (window.screen && window.screen.width < 768);
+    };
 
     const resize = () => {
       const parent = canvas.parentElement;
       const width = parent ? parent.clientWidth : window.innerWidth;
       const height = parent ? parent.clientHeight : window.innerHeight;
-      const pixelRatio = Math.min(window.devicePixelRatio || 1, propsRef.current.dpr || 1);
+      const isMobile = isMobileViewport();
+      // On mobile screens, clamp DPR to 0.8 (under blur(6.5px), visuals are identical while fill rate drops by ~90%)
+      // On desktop, keep exact prop dpr or window.devicePixelRatio
+      const maxDpr = isMobile ? 0.8 : propsRef.current.dpr || 1;
+      const pixelRatio = Math.min(window.devicePixelRatio || 1, maxDpr);
       const displayWidth = Math.max(1, Math.floor(width * pixelRatio));
       const displayHeight = Math.max(1, Math.floor(height * pixelRatio));
 
@@ -407,13 +419,37 @@ export const GlowingRidges: React.FC<GlowingRidgesProps> = ({
       }
     };
 
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined" && canvas.parentElement) {
+      resizeObserver = new ResizeObserver(() => {
+        resize();
+      });
+      resizeObserver.observe(canvas.parentElement);
+    }
+
     window.addEventListener("resize", resize);
     resize();
+
+    const onVisibilityChange = () => {
+      isDocumentVisible = document.visibilityState === "visible";
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
 
     const render = (now: number) => {
       animId = requestAnimationFrame(render);
 
-      if (!isVisibleRef.current) return;
+      if (!isVisibleRef.current || !isDocumentVisible) return;
+
+      const isMobile = isMobileViewport();
+      // Target FPS: 30 FPS on mobile to eliminate CPU/GPU throttling; 60 FPS on desktop
+      const targetFps = isMobile ? 30 : 60;
+      const frameInterval = 1000 / targetFps;
+      const elapsed = now - lastFrameTime;
+
+      if (elapsed < frameInterval) {
+        return;
+      }
+      lastFrameTime = now - (elapsed % frameInterval);
 
       const p = propsRef.current;
       const delta = Math.min((now - lastTime) / 1000, 0.05);
@@ -424,15 +460,18 @@ export const GlowingRidges: React.FC<GlowingRidgesProps> = ({
         churnAccum += delta * p.churnSpeed;
       }
 
-      resize();
-
       gl.useProgram(program);
+
+      // On mobile screens under 6.5px blur, 8 layers & 3 detail iterations are visually indistinguishable
+      // while cutting shader calculations by 60%. On desktop, keep full 12 layers & 5 detail iterations.
+      const activeLayers = isMobile ? Math.min(8, p.layers) : p.layers;
+      const activeDetail = isMobile ? Math.min(3, p.detail) : p.detail;
 
       gl.uniform2f(locResolution, canvas.width, canvas.height);
       gl.uniform1f(locFlow, flowAccum);
       gl.uniform1f(locChurn, churnAccum);
-      gl.uniform1f(locLayers, Math.max(1, Math.min(15, p.layers)));
-      gl.uniform1f(locDetail, Math.max(1, Math.min(10, p.detail)));
+      gl.uniform1f(locLayers, Math.max(1, Math.min(15, activeLayers)));
+      gl.uniform1f(locDetail, Math.max(1, Math.min(10, activeDetail)));
       gl.uniform1f(locTurbulence, Math.max(0, p.turbulence));
       gl.uniform1f(locZoom, Math.max(0.05, p.zoom));
       gl.uniform2f(locShift, p.shiftX, p.shiftY);
@@ -462,11 +501,19 @@ export const GlowingRidges: React.FC<GlowingRidgesProps> = ({
       gl.drawArrays(gl.TRIANGLES, 0, 6);
     };
 
-    animId = requestAnimationFrame(render);
+    // Defer animation loop start by a short tick so initial page paint (FCP/LCP) finishes without contention
+    const startTimer = setTimeout(() => {
+      lastTime = performance.now();
+      lastFrameTime = performance.now();
+      animId = requestAnimationFrame(render);
+    }, 50);
 
     return () => {
+      clearTimeout(startTimer);
       cancelAnimationFrame(animId);
+      if (resizeObserver) resizeObserver.disconnect();
       window.removeEventListener("resize", resize);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       gl.deleteBuffer(vertexBuffer);
       gl.deleteShader(vs);
       gl.deleteShader(fs);

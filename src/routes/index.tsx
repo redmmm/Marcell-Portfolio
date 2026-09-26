@@ -70,7 +70,7 @@ function HomePage() {
   if (isLocked) return <LockedScreen />;
 
   return (
-    <div className="min-h-dvh bg-background relative">
+    <main className="min-h-dvh bg-background relative">
       {/* Background Glowing Ridges: strictly behind hero and filter tags */}
       <BackgroundRidges className="absolute inset-x-0 top-0 h-[880px] lg:h-[950px] z-0" />
 
@@ -100,7 +100,7 @@ function HomePage() {
 
       {/* Category Filter Bar */}
       {uniqueCategories.length > 0 && (
-        <section className="px-6 pb-12 relative z-10">
+        <section className="px-6 pb-12 relative z-10" aria-label="Filter works by category">
           <div className="mx-auto max-w-7xl flex flex-col items-center gap-4">
             <button
               onClick={() => setSelectedCategory(null)}
@@ -132,11 +132,26 @@ function HomePage() {
       )}
 
       {/* Video Grid Section: rests cleanly on original site background */}
-      <section className="px-6 pb-32 relative z-10">
+      <section className="px-6 pb-32 relative z-10" aria-labelledby="selected-work-heading">
+        <h2 id="selected-work-heading" className="sr-only">
+          Selected Works
+        </h2>
         <div className="mx-auto max-w-7xl">
           {filteredVideos === null ? (
-            <div className="flex items-center justify-center py-24">
-              <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[...Array(6)].map((_, i) => (
+                <div
+                  key={i}
+                  className="rounded-3xl overflow-hidden bg-card/50 border border-border/40 animate-pulse"
+                >
+                  <div className="aspect-video bg-secondary/60" />
+                  <div className="p-6 md:p-7 space-y-3">
+                    <div className="h-7 w-3/4 bg-secondary/70 rounded-md" />
+                    <div className="h-4 w-full bg-secondary/40 rounded-md" />
+                    <div className="h-4 w-1/2 bg-secondary/40 rounded-md" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : filteredVideos.length === 0 ? (
             <div className="text-center py-24 text-muted-foreground">
@@ -165,6 +180,6 @@ function HomePage() {
           <p>© {new Date().getFullYear()} — All rights reserved.</p>
         </div>
       </footer>
-    </div>
+    </main>
   );
 }

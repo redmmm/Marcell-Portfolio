@@ -39,7 +39,10 @@ export function VideoCard({ title, description, youtubeUrl, index = 0 }: VideoCa
           <div className="relative aspect-video overflow-hidden bg-secondary">
             <img
               src={youtubeThumbnail(id)}
-              alt={title}
+              alt=""
+              aria-hidden="true"
+              width={1280}
+              height={720}
               loading="lazy"
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).src = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;

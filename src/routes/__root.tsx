@@ -47,6 +47,10 @@ export const Route = createRootRoute({
     links: [
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
       { rel: "stylesheet", href: appCss },
+      { rel: "preconnect", href: "https://lqypaxtbrjlotesuoola.supabase.co" },
+      { rel: "dns-prefetch", href: "https://lqypaxtbrjlotesuoola.supabase.co" },
+      { rel: "preconnect", href: "https://i.ytimg.com" },
+      { rel: "dns-prefetch", href: "https://i.ytimg.com" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {

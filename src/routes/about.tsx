@@ -55,7 +55,7 @@ function AboutPage() {
   if (isLocked) return <LockedScreen />;
 
   return (
-    <div className="min-h-dvh bg-background">
+    <main className="min-h-dvh bg-background">
       <SiteHeader />
       <section className="pt-40 pb-24 px-6">
         <div className="mx-auto max-w-3xl animate-fade-up">
@@ -82,6 +82,8 @@ function AboutPage() {
                 <img
                   src="/davinci.png"
                   alt="DaVinci Resolve"
+                  width={48}
+                  height={48}
                   className="w-12 h-12 object-contain opacity-100 transition-all duration-500 md:grayscale md:opacity-60 md:group-hover:grayscale-0 md:group-hover:opacity-100 group-hover:scale-105"
                 />
                 <div>
@@ -95,6 +97,8 @@ function AboutPage() {
                 <img
                   src="/premiere.png"
                   alt="Premiere Pro"
+                  width={48}
+                  height={48}
                   className="w-12 h-12 object-contain opacity-100 transition-all duration-500 md:grayscale md:opacity-60 md:group-hover:grayscale-0 md:group-hover:opacity-100 group-hover:scale-105"
                 />
                 <div>
@@ -108,6 +112,8 @@ function AboutPage() {
                 <img
                   src="/ai-sparkle.png"
                   alt="Generative AI"
+                  width={48}
+                  height={48}
                   className="w-12 h-12 object-contain opacity-100 transition-all duration-500 md:grayscale md:opacity-60 md:group-hover:grayscale-0 md:group-hover:opacity-100 group-hover:scale-105"
                 />
                 <div>
@@ -134,6 +140,6 @@ function AboutPage() {
           </div>
         </div>
       </section>
-    </div>
+    </main>
   );
 }
