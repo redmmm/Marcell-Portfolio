@@ -8,7 +8,7 @@ interface BackgroundRidgesProps {
 
 export function BackgroundRidges({
   opacity = 0.85,
-  blur = 3.5,
+  blur = 6.5,
   className = "",
 }: BackgroundRidgesProps) {
   return (
@@ -23,7 +23,7 @@ export function BackgroundRidges({
       }}
     >
       <div
-        className="w-full h-full scale-[1.03]"
+        className="w-full h-full scale-[1.05]"
         style={{
           filter: blur > 0 ? `blur(${blur}px)` : undefined,
           mixBlendMode: "screen",
