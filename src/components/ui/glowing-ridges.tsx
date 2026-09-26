@@ -103,9 +103,17 @@ vec3 fastTanh(vec3 x) {
 }
 
 void main() {
+  vec2 coord = vUv;
+  float currentAspect = uResolution.x / uResolution.y;
+  float refAspect = 16.0 / 9.0;
+  if (currentAspect < refAspect) {
+    float factor = currentAspect / refAspect;
+    coord.x = (coord.x - 0.5) * factor + 0.55;
+  }
+
   float c = cos(uRotation);
   float sn = sin(uRotation);
-  vec2 turned = mat2(c, -sn, sn, c) * (vUv - 0.5) + 0.5;
+  vec2 turned = mat2(c, -sn, sn, c) * (coord - 0.5) + 0.5;
   vec2 uv = (turned - 1.0) * uZoom - uShift;
 
   vec2 p = (uv + vec2(0.6, -0.1)) * uDensity;
