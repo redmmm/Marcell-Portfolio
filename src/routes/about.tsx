@@ -51,11 +51,11 @@ function AboutPage() {
       });
   }, []);
 
-  if (isLocked === null || loading) return <div className="min-h-dvh bg-transparent" />;
+  if (isLocked === null || loading) return <div className="min-h-dvh bg-background" />;
   if (isLocked) return <LockedScreen />;
 
   return (
-    <div className="min-h-dvh bg-transparent relative z-10">
+    <div className="min-h-dvh bg-background">
       <SiteHeader />
       <section className="pt-40 pb-24 px-6">
         <div className="mx-auto max-w-3xl animate-fade-up">

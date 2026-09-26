@@ -73,14 +73,22 @@ function HomePage() {
       <SiteHeader />
 
       <section className="relative pt-40 pb-16 px-6 text-center overflow-hidden">
+        {/* Soft radial scrim to enhance text legibility over moving waves */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 pointer-events-none flex items-center justify-center -z-10"
+        >
+          <div className="w-[740px] max-w-full h-[440px] rounded-full bg-background/55 blur-3xl" />
+        </div>
+
         <div className="mx-auto max-w-4xl animate-fade-up">
-          <p className="text-xs uppercase tracking-[0.3em] text-primary mb-6">
+          <p className="text-xs uppercase tracking-[0.3em] text-primary mb-6 drop-shadow-sm font-medium">
             VIDEO EDITOR • PORTFOLIO
           </p>
-          <h1 className="font-serif text-5xl md:text-7xl lg:text-8xl tracking-tight text-foreground text-balance leading-[1.05]">
+          <h1 className="font-serif text-5xl md:text-7xl lg:text-8xl tracking-tight text-foreground text-balance leading-[1.05] drop-shadow-md">
             Versatile editing for any screen.
           </h1>
-          <p className="mt-8 text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+          <p className="mt-8 text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed drop-shadow-sm">
             A showcase of my work across multiple styles. I make diverse video edits. From slow, emotionally driven proposal films to high-octane Hungaroring track edits and fast-paced commercials. Whether it's scroll-stopping social media content or polished talking heads with clean motion graphics, I bring your footage to life.
           </p>
         </div>
@@ -88,7 +96,7 @@ function HomePage() {
 
       {/* Category Filter Bar */}
       {uniqueCategories.length > 0 && (
-        <section className="px-6 pb-8">
+        <section className="px-6 pb-8 relative z-10">
           <div className="mx-auto max-w-7xl flex flex-col items-center gap-4">
             <button
               onClick={() => setSelectedCategory(null)}
@@ -119,10 +127,10 @@ function HomePage() {
         </section>
       )}
 
-      {/* Smooth fade-to-background transition below filter tags */}
+      {/* Seamless, deep fade-to-background transition below filter tags */}
       <div
         aria-hidden="true"
-        className="h-36 -mb-20 pointer-events-none bg-gradient-to-b from-transparent via-background/60 to-background relative z-10"
+        className="h-72 -mt-20 -mb-28 pointer-events-none bg-gradient-to-b from-transparent via-[#040609]/30 via-20% via-[#040609]/75 via-60% to-[#040609] relative z-10"
       />
 
       <section className="px-6 pb-32 bg-background relative z-10">

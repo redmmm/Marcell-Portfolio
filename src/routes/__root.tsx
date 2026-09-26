@@ -78,11 +78,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const isAdmin = pathname.startsWith("/admin");
+  const isHome = pathname === "/";
 
   return (
     <>
-      {!isAdmin && <BackgroundRidges />}
+      {isHome && <BackgroundRidges />}
       <Outlet />
     </>
   );
