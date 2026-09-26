@@ -82,7 +82,7 @@ function AboutPage() {
                 <img
                   src="/davinci.png"
                   alt="DaVinci Resolve"
-                  className="w-12 h-12 object-contain grayscale opacity-60 transition-all duration-500 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105"
+                  className="w-12 h-12 object-contain opacity-100 transition-all duration-500 md:grayscale md:opacity-60 md:group-hover:grayscale-0 md:group-hover:opacity-100 group-hover:scale-105"
                 />
                 <div>
                   <h3 className="text-sm font-medium text-foreground">DaVinci Resolve</h3>
@@ -95,7 +95,7 @@ function AboutPage() {
                 <img
                   src="/premiere.png"
                   alt="Premiere Pro"
-                  className="w-12 h-12 object-contain grayscale opacity-60 transition-all duration-500 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105"
+                  className="w-12 h-12 object-contain opacity-100 transition-all duration-500 md:grayscale md:opacity-60 md:group-hover:grayscale-0 md:group-hover:opacity-100 group-hover:scale-105"
                 />
                 <div>
                   <h3 className="text-sm font-medium text-foreground">Premiere Pro</h3>
@@ -108,7 +108,7 @@ function AboutPage() {
                 <img
                   src="/ai-sparkle.png"
                   alt="Generative AI"
-                  className="w-12 h-12 object-contain grayscale opacity-60 transition-all duration-500 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105"
+                  className="w-12 h-12 object-contain opacity-100 transition-all duration-500 md:grayscale md:opacity-60 md:group-hover:grayscale-0 md:group-hover:opacity-100 group-hover:scale-105"
                 />
                 <div>
                   <h3 className="text-sm font-medium text-foreground">Generative AI</h3>
