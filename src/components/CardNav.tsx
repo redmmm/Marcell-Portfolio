@@ -135,25 +135,22 @@ export const CardNav = ({
     return tl;
   };
 
-  // Lazily create timeline when menu is opened, avoiding synchronous reflow on initial page mount
-  const getOrInitTimeline = () => {
-    if (!tlRef.current) {
-      tlRef.current = createTimeline();
-    }
-    return tlRef.current;
-  };
+  useEffect(() => {
+    const tl = createTimeline();
+    tlRef.current = tl;
+
+    return () => {
+      tl?.kill();
+      tlRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ease, items]);
 
   useEffect(() => {
     const handleResize = () => {
-      if (!isExpanded) {
-        if (tlRef.current) {
-          tlRef.current.kill();
-          tlRef.current = null;
-        }
-        return;
-      }
+      if (!tlRef.current) return;
 
-      if (tlRef.current) {
+      if (isExpanded) {
         const newHeight = calculateHeight();
         gsap.set(navRef.current, { height: newHeight });
 
@@ -163,17 +160,19 @@ export const CardNav = ({
           newTl.progress(1);
           tlRef.current = newTl;
         }
+      } else {
+        tlRef.current.kill();
+        const newTl = createTimeline();
+        if (newTl) {
+          tlRef.current = newTl;
+        }
       }
     };
 
     window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      tlRef.current?.kill();
-      tlRef.current = null;
-    };
+    return () => window.removeEventListener('resize', handleResize);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isExpanded, items]);
+  }, [isExpanded]);
 
   const closeMenu = () => {
     const tl = tlRef.current;
@@ -184,7 +183,7 @@ export const CardNav = ({
   };
 
   const openMenu = () => {
-    const tl = getOrInitTimeline();
+    const tl = tlRef.current;
     if (!tl || isExpanded) return;
     setIsHamburgerOpen(true);
     setIsExpanded(true);
