@@ -2,42 +2,27 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export function useSiteLock() {
-  const [isLocked, setIsLocked] = useState<boolean | null>(null);
+  const [isLocked, setIsLocked] = useState<boolean>(false);
 
   useEffect(() => {
     let active = true;
 
-    async function load() {
-      const { data, error } = await supabase
-        .from("site_settings")
-        .select("is_locked")
-        .limit(1)
-        .maybeSingle();
-      if (error) {
-        console.error("[SiteLock] Error loading settings");
-      }
-      // Site lock settings loaded
-      if (active) setIsLocked(data?.is_locked ?? false);
-    }
-    load();
-
-    const channel = supabase
-      .channel("site_settings_changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "site_settings" },
-        (payload) => {
-          const row = payload.new as { is_locked?: boolean } | undefined;
-          if (row && typeof row.is_locked === "boolean") {
-            setIsLocked(row.is_locked);
-          }
-        },
-      )
-      .subscribe();
+    supabase
+      .from("site_settings")
+      .select("is_locked")
+      .limit(1)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("[SiteLock] Error loading settings");
+        }
+        if (active && data?.is_locked) {
+          setIsLocked(true);
+        }
+      });
 
     return () => {
       active = false;
-      supabase.removeChannel(channel);
     };
   }, []);
 

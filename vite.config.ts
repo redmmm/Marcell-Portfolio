@@ -21,6 +21,21 @@ export default defineConfig({
         }
         warn(warning)
       },
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('@supabase')) {
+              return 'vendor-supabase'
+            }
+            if (id.includes('lucide-react')) {
+              return 'vendor-lucide'
+            }
+            if (id.includes('gsap')) {
+              return 'vendor-gsap'
+            }
+          }
+        },
+      },
     },
   },
   plugins: [

@@ -293,6 +293,8 @@ export const GlowingRidges: React.FC<GlowingRidgesProps> = ({
     dpr,
   ]);
 
+  const startAnimationRef = useRef<() => void>(() => {});
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container || typeof IntersectionObserver === "undefined") return;
@@ -300,6 +302,9 @@ export const GlowingRidges: React.FC<GlowingRidgesProps> = ({
     const observer = new IntersectionObserver(
       ([entry]) => {
         isVisibleRef.current = entry.isIntersecting;
+        if (entry.isIntersecting) {
+          startAnimationRef.current();
+        }
       },
       { threshold: 0 }
     );
@@ -387,7 +392,9 @@ export const GlowingRidges: React.FC<GlowingRidgesProps> = ({
     const locBackground = gl.getUniformLocation(program, "uBackground");
     const locInk = gl.getUniformLocation(program, "uInk");
 
-    let animId: number;
+    let animId: number | null = null;
+    let isLoopRunning = false;
+    let animationStarted = false;
     let lastTime = performance.now();
     let lastFrameTime = performance.now();
     let flowAccum = 0;
@@ -405,9 +412,9 @@ export const GlowingRidges: React.FC<GlowingRidgesProps> = ({
       const width = parent ? parent.clientWidth : window.innerWidth;
       const height = parent ? parent.clientHeight : window.innerHeight;
       const isMobile = isMobileViewport();
-      // On mobile screens, clamp DPR to 0.8 (under blur(6.5px), visuals are identical while fill rate drops by ~90%)
-      // On desktop, keep exact prop dpr or window.devicePixelRatio
-      const maxDpr = isMobile ? 0.8 : propsRef.current.dpr || 1;
+      // On mobile screens, clamp DPR to 0.5 (under blur(6.5px), visuals are identical while fill rate drops by ~85%)
+      // On desktop, clamp to 0.75 or propsRef.current.dpr
+      const maxDpr = isMobile ? 0.5 : (propsRef.current.dpr || 0.75);
       const pixelRatio = Math.min(window.devicePixelRatio || 1, maxDpr);
       const displayWidth = Math.max(1, Math.floor(width * pixelRatio));
       const displayHeight = Math.max(1, Math.floor(height * pixelRatio));
@@ -423,48 +430,25 @@ export const GlowingRidges: React.FC<GlowingRidgesProps> = ({
     if (typeof ResizeObserver !== "undefined" && canvas.parentElement) {
       resizeObserver = new ResizeObserver(() => {
         resize();
+        drawFrame();
       });
       resizeObserver.observe(canvas.parentElement);
     }
 
-    window.addEventListener("resize", resize);
+    const onResizeWindow = () => {
+      resize();
+      drawFrame();
+    };
+    window.addEventListener("resize", onResizeWindow);
     resize();
 
-    const onVisibilityChange = () => {
-      isDocumentVisible = document.visibilityState === "visible";
-    };
-    document.addEventListener("visibilitychange", onVisibilityChange);
-
-    const render = (now: number) => {
-      animId = requestAnimationFrame(render);
-
-      if (!isVisibleRef.current || !isDocumentVisible) return;
-
+    const drawFrame = () => {
+      if (!gl || !canvas) return;
       const isMobile = isMobileViewport();
-      // Target FPS: 30 FPS on mobile to eliminate CPU/GPU throttling; 60 FPS on desktop
-      const targetFps = isMobile ? 30 : 60;
-      const frameInterval = 1000 / targetFps;
-      const elapsed = now - lastFrameTime;
-
-      if (elapsed < frameInterval) {
-        return;
-      }
-      lastFrameTime = now - (elapsed % frameInterval);
-
       const p = propsRef.current;
-      const delta = Math.min((now - lastTime) / 1000, 0.05);
-      lastTime = now;
-
-      if (!p.paused) {
-        flowAccum += delta * p.flowSpeed;
-        churnAccum += delta * p.churnSpeed;
-      }
-
       gl.useProgram(program);
 
-      // On mobile screens under 6.5px blur, 8 layers & 3 detail iterations are visually indistinguishable
-      // while cutting shader calculations by 60%. On desktop, keep full 12 layers & 5 detail iterations.
-      const activeLayers = isMobile ? Math.min(8, p.layers) : p.layers;
+      const activeLayers = isMobile ? Math.min(7, p.layers) : p.layers;
       const activeDetail = isMobile ? Math.min(3, p.detail) : p.detail;
 
       gl.uniform2f(locResolution, canvas.width, canvas.height);
@@ -501,18 +485,103 @@ export const GlowingRidges: React.FC<GlowingRidgesProps> = ({
       gl.drawArrays(gl.TRIANGLES, 0, 6);
     };
 
-    // Defer animation loop start by a short tick so initial page paint (FCP/LCP) finishes without contention
-    const startTimer = setTimeout(() => {
+    // Render 1st static frame immediately so background is completely rendered on initial paint
+    drawFrame();
+
+    const onVisibilityChange = () => {
+      isDocumentVisible = document.visibilityState === "visible";
+      if (isDocumentVisible && animationStarted && !isLoopRunning) {
+        startLoop();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    const render = (now: number) => {
+      if (!isLoopRunning) return;
+
+      if (!isVisibleRef.current || !isDocumentVisible) {
+        isLoopRunning = false;
+        animId = null;
+        return;
+      }
+
+      animId = requestAnimationFrame(render);
+
+      const isMobile = isMobileViewport();
+      // Cap FPS: 24 FPS on mobile, 30 FPS on desktop (butter-smooth for slow wave drift)
+      const targetFps = isMobile ? 24 : 30;
+      const frameInterval = 1000 / targetFps;
+      const elapsed = now - lastFrameTime;
+
+      if (elapsed < frameInterval) {
+        return;
+      }
+      lastFrameTime = now - (elapsed % frameInterval);
+
+      const p = propsRef.current;
+      const delta = Math.min((now - lastTime) / 1000, 0.05);
+      lastTime = now;
+
+      if (!p.paused) {
+        flowAccum += delta * p.flowSpeed;
+        churnAccum += delta * p.churnSpeed;
+      }
+
+      drawFrame();
+    };
+
+    const startLoop = () => {
+      animationStarted = true;
+      if (isLoopRunning || !isVisibleRef.current || !isDocumentVisible) return;
+      isLoopRunning = true;
       lastTime = performance.now();
       lastFrameTime = performance.now();
       animId = requestAnimationFrame(render);
-    }, 50);
+    };
+
+    startAnimationRef.current = startLoop;
+
+    // Start loop when user interacts (scroll, touch, move) or when main thread is idle
+    const onUserInteraction = () => {
+      cleanupInteractionListeners();
+      startLoop();
+    };
+
+    const cleanupInteractionListeners = () => {
+      window.removeEventListener("scroll", onUserInteraction);
+      window.removeEventListener("pointermove", onUserInteraction);
+      window.removeEventListener("touchstart", onUserInteraction);
+    };
+
+    window.addEventListener("scroll", onUserInteraction, { passive: true, once: true });
+    window.addEventListener("pointermove", onUserInteraction, { passive: true, once: true });
+    window.addEventListener("touchstart", onUserInteraction, { passive: true, once: true });
+
+    let idleId: number | undefined;
+    let fallbackTimer: ReturnType<typeof setTimeout> | undefined;
+
+    if (typeof window !== "undefined") {
+      if ("requestIdleCallback" in window) {
+        idleId = (window as unknown as { requestIdleCallback: (cb: () => void, opts: { timeout: number }) => number }).requestIdleCallback(
+          () => {
+            fallbackTimer = setTimeout(startLoop, 1800);
+          },
+          { timeout: 3500 }
+        );
+      } else {
+        fallbackTimer = setTimeout(startLoop, 2200);
+      }
+    }
 
     return () => {
-      clearTimeout(startTimer);
-      cancelAnimationFrame(animId);
+      cleanupInteractionListeners();
+      if (fallbackTimer) clearTimeout(fallbackTimer);
+      if (idleId && typeof window !== "undefined" && "cancelIdleCallback" in window) {
+        (window as unknown as { cancelIdleCallback: (id: number) => void }).cancelIdleCallback(idleId);
+      }
+      if (animId) cancelAnimationFrame(animId);
       if (resizeObserver) resizeObserver.disconnect();
-      window.removeEventListener("resize", resize);
+      window.removeEventListener("resize", onResizeWindow);
       document.removeEventListener("visibilitychange", onVisibilityChange);
       gl.deleteBuffer(vertexBuffer);
       gl.deleteShader(vs);

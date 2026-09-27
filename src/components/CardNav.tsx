@@ -1,12 +1,9 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { ArrowUpRight, Copy } from 'lucide-react';
 import { Link, useNavigate, useLocation } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import './CardNav.css';
-
-const useIsomorphicLayoutEffect =
-  typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 export interface CardNavLink {
   label: string;
@@ -138,22 +135,25 @@ export const CardNav = ({
     return tl;
   };
 
-  useIsomorphicLayoutEffect(() => {
-    const tl = createTimeline();
-    tlRef.current = tl;
+  // Lazily create timeline when menu is opened, avoiding synchronous reflow on initial page mount
+  const getOrInitTimeline = () => {
+    if (!tlRef.current) {
+      tlRef.current = createTimeline();
+    }
+    return tlRef.current;
+  };
 
-    return () => {
-      tl?.kill();
-      tlRef.current = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ease, items]);
-
-  useIsomorphicLayoutEffect(() => {
+  useEffect(() => {
     const handleResize = () => {
-      if (!tlRef.current) return;
+      if (!isExpanded) {
+        if (tlRef.current) {
+          tlRef.current.kill();
+          tlRef.current = null;
+        }
+        return;
+      }
 
-      if (isExpanded) {
+      if (tlRef.current) {
         const newHeight = calculateHeight();
         gsap.set(navRef.current, { height: newHeight });
 
@@ -163,19 +163,17 @@ export const CardNav = ({
           newTl.progress(1);
           tlRef.current = newTl;
         }
-      } else {
-        tlRef.current.kill();
-        const newTl = createTimeline();
-        if (newTl) {
-          tlRef.current = newTl;
-        }
       }
     };
 
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      tlRef.current?.kill();
+      tlRef.current = null;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isExpanded]);
+  }, [isExpanded, items]);
 
   const closeMenu = () => {
     const tl = tlRef.current;
@@ -186,7 +184,7 @@ export const CardNav = ({
   };
 
   const openMenu = () => {
-    const tl = tlRef.current;
+    const tl = getOrInitTimeline();
     if (!tl || isExpanded) return;
     setIsHamburgerOpen(true);
     setIsExpanded(true);

@@ -35,8 +35,8 @@ export function BackgroundRidges({
           colorA="#ff6a2a"
           colorB="#22d3ee"
           colorC="#c026d3"
-          layers={12}
-          detail={5}
+          layers={10}
+          detail={4}
           turbulence={0.6}
           zoom={1.1}
           shiftX={0.45}
@@ -54,7 +54,7 @@ export function BackgroundRidges({
           grain={0.15}
           opacity={opacity}
           blend="add"
-          dpr={1}
+          dpr={0.75}
         />
       </div>
     </div>

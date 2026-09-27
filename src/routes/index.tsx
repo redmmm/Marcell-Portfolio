@@ -35,14 +35,13 @@ function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isLocked) return;
     supabase
       .from("videos")
       .select("id,title,description,youtube_url,category")
       .order("display_order", { ascending: true })
       .order("created_at", { ascending: false })
       .then(({ data }) => setVideos(data ?? []));
-  }, [isLocked]);
+  }, []);
 
   // Extract unique categories from videos
   const uniqueCategories = useMemo(() => {
@@ -62,10 +61,6 @@ function HomePage() {
     if (!selectedCategory) return videos;
     return videos.filter((v) => v.category === selectedCategory);
   }, [videos, selectedCategory]);
-
-  if (isLocked === null) {
-    return <div className="min-h-dvh bg-background" />;
-  }
 
   if (isLocked) return <LockedScreen />;
 

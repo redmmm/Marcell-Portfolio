@@ -51,8 +51,8 @@ function AboutPage() {
       });
   }, []);
 
-  if (isLocked === null || loading) return <div className="min-h-dvh bg-background" />;
   if (isLocked) return <LockedScreen />;
+  if (loading) return <div className="min-h-dvh bg-background" />;
 
   return (
     <main className="min-h-dvh bg-background">

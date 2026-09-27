@@ -38,14 +38,21 @@ export function VideoCard({ title, description, youtubeUrl, index = 0 }: VideoCa
         >
           <div className="relative aspect-video overflow-hidden bg-secondary">
             <img
-              src={youtubeThumbnail(id)}
+              src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`}
+              srcSet={`https://i.ytimg.com/vi/${id}/mqdefault.jpg 320w, https://i.ytimg.com/vi/${id}/hqdefault.jpg 480w, https://i.ytimg.com/vi/${id}/maxresdefault.jpg 1280w`}
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 420px"
               alt=""
               aria-hidden="true"
               width={1280}
               height={720}
-              loading="lazy"
+              loading={index < 2 ? "eager" : "lazy"}
+              fetchPriority={index === 0 ? "high" : "auto"}
+              decoding="async"
               onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+                const target = e.currentTarget as HTMLImageElement;
+                if (!target.src.includes("hqdefault")) {
+                  target.src = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+                }
               }}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
             />
