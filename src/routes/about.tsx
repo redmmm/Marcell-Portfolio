@@ -34,7 +34,7 @@ export const Route = createFileRoute("/about")({
 });
 
 function AboutPage() {
-  const isLocked = useSiteLock();
+  const { isLocked, loading: lockLoading } = useSiteLock();
   const [content, setContent] = useState<AboutContent | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -51,6 +51,8 @@ function AboutPage() {
       });
   }, []);
 
+  // Show nothing while checking lock status to prevent flash of content
+  if (lockLoading) return <div className="min-h-dvh bg-background" />;
   if (isLocked) return <LockedScreen />;
   if (loading) return <div className="min-h-dvh bg-background" />;
 

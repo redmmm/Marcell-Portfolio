@@ -1,8 +1,14 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
+/**
+ * Returns `{ isLocked, loading }`.
+ * While loading is true, consumers should show nothing (or a blank screen)
+ * to avoid flashing content before the lock status is known.
+ */
 export function useSiteLock() {
-  const [isLocked, setIsLocked] = useState<boolean>(false);
+  const [isLocked, setIsLocked] = useState<boolean>(true); // assume locked until proven otherwise
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
@@ -16,8 +22,9 @@ export function useSiteLock() {
         if (error) {
           console.error("[SiteLock] Error loading settings");
         }
-        if (active && data?.is_locked) {
-          setIsLocked(true);
+        if (active) {
+          setIsLocked(!!data?.is_locked);
+          setLoading(false);
         }
       });
 
@@ -26,5 +33,5 @@ export function useSiteLock() {
     };
   }, []);
 
-  return isLocked;
+  return { isLocked, loading };
 }

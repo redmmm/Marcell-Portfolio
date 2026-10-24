@@ -30,7 +30,7 @@ interface Video {
 }
 
 function HomePage() {
-  const isLocked = useSiteLock();
+  const { isLocked, loading: lockLoading } = useSiteLock();
   const [videos, setVideos] = useState<Video[] | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
@@ -62,6 +62,8 @@ function HomePage() {
     return videos.filter((v) => v.category === selectedCategory);
   }, [videos, selectedCategory]);
 
+  // Show nothing while checking lock status to prevent flash of content
+  if (lockLoading) return <div className="min-h-dvh bg-background" />;
   if (isLocked) return <LockedScreen />;
 
   return (
