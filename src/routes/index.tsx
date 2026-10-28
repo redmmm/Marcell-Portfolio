@@ -27,6 +27,7 @@ interface Video {
   description: string;
   youtube_url: string;
   category: string | null;
+  hidden: boolean;
 }
 
 function HomePage() {
@@ -37,18 +38,22 @@ function HomePage() {
   useEffect(() => {
     supabase
       .from("videos")
-      .select("id,title,description,youtube_url,category")
+      .select("*")
       .order("display_order", { ascending: true })
       .order("created_at", { ascending: false })
-      .then(({ data }) => setVideos(data ?? []));
+      .then(({ data }) =>
+        setVideos(
+          (data ?? []).map((v) => ({ ...v, hidden: v.hidden ?? false }))
+        )
+      );
   }, []);
 
-  // Extract unique categories from videos
+  // Extract unique categories from visible videos only
   const uniqueCategories = useMemo(() => {
     if (!videos) return [];
     const categories = new Set<string>();
     videos.forEach((v) => {
-      if (v.category && v.category.trim()) {
+      if (!v.hidden && v.category && v.category.trim()) {
         categories.add(v.category.trim());
       }
     });
@@ -164,6 +169,7 @@ function HomePage() {
                   title={v.title}
                   description={v.description}
                   youtubeUrl={v.youtube_url}
+                  hidden={v.hidden}
                   index={i}
                 />
               ))}

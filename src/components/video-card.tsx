@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Play } from "lucide-react";
+import { Play, EyeOff } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -16,14 +16,51 @@ interface VideoCardProps {
   title: string;
   description: string;
   youtubeUrl: string;
+  hidden?: boolean;
   index?: number;
 }
 
-export function VideoCard({ title, description, youtubeUrl, index = 0 }: VideoCardProps) {
+export function VideoCard({ title, description, youtubeUrl, hidden = false, index = 0 }: VideoCardProps) {
   const [open, setOpen] = useState(false);
   const id = extractYouTubeId(youtubeUrl);
 
   if (!id) return null;
+
+  // Hidden card — blank placeholder with "jelenleg nem elérhető"
+  if (hidden) {
+    return (
+      <article
+        className="animate-fade-up"
+        style={{ animationDelay: `${index * 70}ms` }}
+      >
+        <div className="w-full rounded-3xl overflow-hidden bg-card/30 border border-border/30 transition-all duration-500">
+          <div className="relative aspect-video overflow-hidden bg-secondary/20 flex items-center justify-center">
+            {/* Subtle blurred background hint */}
+            <div className="absolute inset-0 opacity-[0.07]">
+              <img
+                src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`}
+                alt=""
+                aria-hidden="true"
+                className="w-full h-full object-cover blur-xl scale-110"
+              />
+            </div>
+            <div className="relative flex flex-col items-center gap-3 text-center px-6">
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-muted/30 border border-border/30">
+                <EyeOff className="h-5 w-5 text-muted-foreground/50" />
+              </span>
+              <p className="text-sm font-medium text-muted-foreground/60 tracking-wide">
+                jelenleg nem elérhető
+              </p>
+            </div>
+          </div>
+          <div className="p-6 md:p-7">
+            <div className="h-7 w-3/4 bg-secondary/30 rounded-md mb-2" />
+            <div className="h-4 w-1/2 bg-secondary/20 rounded-md" />
+          </div>
+        </div>
+      </article>
+    );
+  }
 
   return (
     <>
