@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -47,19 +47,7 @@ function LoginPage() {
   return (
     <div className="min-h-dvh flex items-center justify-center bg-background px-6">
       <div className="w-full max-w-md">
-        <Link
-          to="/"
-          className="inline-block mb-10 font-serif text-2xl text-primary"
-        >
-          Marcell's Portfolio
-        </Link>
         <div className="rounded-3xl glass shadow-elegant p-8">
-          <h1 className="font-serif text-3xl text-foreground mb-1">
-            Admin sign in
-          </h1>
-          <p className="text-sm text-muted-foreground mb-6">
-            Sign in to manage your portfolio.
-          </p>
 
           <form onSubmit={onSubmit} className="space-y-4">
             <div>
